@@ -36,18 +36,7 @@ jobs:
 
           echo "🔍 Отримання інформації про відео: $VIDEO_URL"
           
-          # === Діагностика з повним логом ===
-          echo "=== Запуск yt-dlp з докладним логуванням ==="
-          yt-dlp \
-            --dump-json \
-            --allow-unplayable-formats \
-            --extractor-args "pinterest:use_webpage=True" \
-            --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36" \
-            --no-check-certificate \
-            --verbose \
-            "$VIDEO_URL" || echo "yt-dlp завершився з помилкою"
-          
-          # Отримуємо інформацію для подальшої обробки
+          # Отримуємо інформацію для перевірки розміру
           INFO=$(yt-dlp \
             --dump-json \
             --allow-unplayable-formats \
@@ -77,13 +66,17 @@ jobs:
           fi
 
           echo "📥 Завантаження та вивантаження на Catbox..."
-          OUTPUT_LINK=$(echo "$INFO" | yt-dlp \
+          
+          # Завантажуємо і одразу вивантажуємо
+          OUTPUT_LINK=$(yt-dlp \
+            --format "best" \
+            --merge-output-format mp4 \
             --allow-unplayable-formats \
             --extractor-args "pinterest:use_webpage=True" \
             --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36" \
             --no-check-certificate \
-            -o - \
-            --input-json - | \
+            --output - \
+            "$VIDEO_URL" | \
             curl -H "Expect:" \
             -F "reqtype=fileupload" \
             -F "fileToUpload=@-;filename=video.mp4;type=video/mp4" \
