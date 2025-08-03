@@ -36,10 +36,11 @@ jobs:
 
           echo "🔍 Отримання інформації про відео: $VIDEO_URL"
           
-          # Отримуємо інформацію про відео
+          # Використовуємо ті самі параметри, що й у локальному боті
           INFO=$(yt-dlp \
             --dump-json \
-            --format "best[height<=480][ext=mp4]" \
+            --format "best[ext=mp4]/bestvideo[ext=mp4]+bestaudio[ext=m4a]/best" \
+            --merge-output-format mp4 \
             --allow-unplayable-formats \
             --extractor-args "pinterest:use_webpage=True" \
             --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
@@ -67,9 +68,9 @@ jobs:
 
           echo "📥 Завантаження та вивантаження на Catbox..."
           OUTPUT_LINK=$(echo "$INFO" | yt-dlp \
-            --format "best[height<=480][ext=mp4]" \
-            --allow-unplayable-formats \
+            --format "best[ext=mp4]/bestvideo[ext=mp4]+bestaudio[ext=m4a]/best" \
             --merge-output-format mp4 \
+            --allow-unplayable-formats \
             -o - \
             --input-json - | \
             curl -H "Expect:" \
