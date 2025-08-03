@@ -26,6 +26,15 @@ jobs:
         run: |
           pip install yt-dlp requests
 
+      - name: Debug system info
+        run: |
+          echo "Python version:"
+          python --version
+          echo "yt-dlp version:"
+          yt-dlp --version
+          echo "ffmpeg version:"
+          ffmpeg -version
+
       - name: Check and upload video
         id: catbox
         run: |
@@ -36,7 +45,19 @@ jobs:
 
           echo "🔍 Отримання інформації про відео: $VIDEO_URL"
           
-          # Використовуємо ті самі параметри, що й у локальному боті
+          # Вмикаємо повне логування
+          echo "=== Запуск yt-dlp з докладним логуванням ==="
+          yt-dlp \
+            --dump-json \
+            --format "best[ext=mp4]/bestvideo[ext=mp4]+bestaudio[ext=m4a]/best" \
+            --merge-output-format mp4 \
+            --allow-unplayable-formats \
+            --extractor-args "pinterest:use_webpage=True" \
+            --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
+            --verbose \
+            "$VIDEO_URL"
+          
+          # Отримуємо інформацію (без verbose для подальшої обробки)
           INFO=$(yt-dlp \
             --dump-json \
             --format "best[ext=mp4]/bestvideo[ext=mp4]+bestaudio[ext=m4a]/best" \
