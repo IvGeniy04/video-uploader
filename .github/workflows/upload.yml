@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       url:
-        description: 'Video URL (TikTok, Instagram, etc.)'
+        description: 'Video URL (TikTok, Instagram, Pinterest, etc.)'
         required: true
         type: string
 
@@ -29,16 +29,21 @@ jobs:
       - name: Check and upload video
         id: catbox
         run: |
-          # Очищаємо URL від пробілів
+          # Очищаємо URL
           VIDEO_URL="${{ github.event.inputs.url }}"
-          VIDEO_URL=$(echo "$VIDEO_URL" | xargs)  # видаляємо пробіли на кінцях
-          
+          VIDEO_URL=$(echo "$VIDEO_URL" | xargs)
           MAX_SIZE_BYTES=$((180 * 1024 * 1024))  # 180 MB
 
           echo "🔍 Отримання інформації про відео: $VIDEO_URL"
           
           # Отримуємо інформацію про відео
-          INFO=$(yt-dlp --dump-json --format "best[height<=480][ext=mp4]" "$VIDEO_URL" 2>/dev/null)
+          INFO=$(yt-dlp \
+            --dump-json \
+            --format "best[height<=480][ext=mp4]" \
+            --allow-unplayable-formats \
+            --extractor-args "pinterest:use_webpage=True" \
+            --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
+            "$VIDEO_URL" 2>/dev/null)
 
           if [ -z "$INFO" ]; then
             echo "❌ Не вдалося отримати інформацію про відео"
@@ -53,17 +58,24 @@ jobs:
           if [ -z "$FILESIZE" ] || [ "$FILESIZE" -eq 0 ]; then
             echo "⚠️ Розмір невідомий — пробуємо завантажити..."
           elif [ "$FILESIZE" -gt "$MAX_SIZE_BYTES" ]; then
-            SIZE_MB=$(echo "$FILESIZE / 1024 / 1024" | bc -l | cut -d. -f1)
-            echo "❌ Відео занадто велике: ${SIZE_MB} MB"
+            echo "❌ Відео занадто велике: більше 180 MB"
             curl -X POST -H "Content-Type: application/json" \
-              -d '{"content": "❌ Відео занадто велике"}' \
+              -d '{"content": "❌ Відео занадто велике (макс. 180 МБ)"}' \
               ${{ secrets.DISCORD_WEBHOOK }}
             exit 1
           fi
 
           echo "📥 Завантаження та вивантаження на Catbox..."
-          OUTPUT_LINK=$(echo "$INFO" | yt-dlp --format "best[height<=480][ext=mp4]" --merge-output-format mp4 -o - --input-json - | \
-            curl -H "Expect:" -F "reqtype=fileupload" -F "fileToUpload=@-;filename=video.mp4;type=video/mp4" https://catbox.moe/user/api.php)
+          OUTPUT_LINK=$(echo "$INFO" | yt-dlp \
+            --format "best[height<=480][ext=mp4]" \
+            --allow-unplayable-formats \
+            --merge-output-format mp4 \
+            -o - \
+            --input-json - | \
+            curl -H "Expect:" \
+            -F "reqtype=fileupload" \
+            -F "fileToUpload=@-;filename=video.mp4;type=video/mp4" \
+            https://catbox.moe/user/api.php)
 
           if [[ "$OUTPUT_LINK" =~ ^https:// ]]; then
             echo "✅ Успішно: $OUTPUT_LINK"
