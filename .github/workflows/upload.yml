@@ -17,6 +17,11 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Install ffmpeg
+        run: |
+          sudo apt update
+          sudo apt install -y ffmpeg
+
       - name: Install dependencies
         run: |
           pip install yt-dlp requests
@@ -24,10 +29,15 @@ jobs:
       - name: Check and upload video
         id: catbox
         run: |
+          # Очищаємо URL від пробілів
           VIDEO_URL="${{ github.event.inputs.url }}"
+          VIDEO_URL=$(echo "$VIDEO_URL" | xargs)  # видаляємо пробіли на кінцях
+          
           MAX_SIZE_BYTES=$((180 * 1024 * 1024))  # 180 MB
 
-          echo "🔍 Отримання інформації про відео..."
+          echo "🔍 Отримання інформації про відео: $VIDEO_URL"
+          
+          # Отримуємо інформацію про відео
           INFO=$(yt-dlp --dump-json --format "best[height<=480][ext=mp4]" "$VIDEO_URL" 2>/dev/null)
 
           if [ -z "$INFO" ]; then
@@ -43,7 +53,8 @@ jobs:
           if [ -z "$FILESIZE" ] || [ "$FILESIZE" -eq 0 ]; then
             echo "⚠️ Розмір невідомий — пробуємо завантажити..."
           elif [ "$FILESIZE" -gt "$MAX_SIZE_BYTES" ]; then
-            echo "❌ Відео занадто велике: $(echo "$FILESIZE" / 1024 / 1024 | cut -d. -f1) MB"
+            SIZE_MB=$(echo "$FILESIZE / 1024 / 1024" | bc -l | cut -d. -f1)
+            echo "❌ Відео занадто велике: ${SIZE_MB} MB"
             curl -X POST -H "Content-Type: application/json" \
               -d '{"content": "❌ Відео занадто велике"}' \
               ${{ secrets.DISCORD_WEBHOOK }}
