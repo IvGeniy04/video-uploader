@@ -1,0 +1,73 @@
+name: Upload Video to Catbox
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'Video URL (TikTok, Instagram, etc.)'
+        required: true
+        type: string
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install yt-dlp requests
+
+      - name: Check and upload video
+        id: catbox
+        run: |
+          VIDEO_URL="${{ github.event.inputs.url }}"
+          MAX_SIZE_BYTES=$((180 * 1024 * 1024))  # 180 MB
+
+          echo "🔍 Отримання інформації про відео..."
+          INFO=$(yt-dlp --dump-json --format "best[height<=480][ext=mp4]" "$VIDEO_URL" 2>/dev/null)
+
+          if [ -z "$INFO" ]; then
+            echo "❌ Не вдалося отримати інформацію про відео"
+            curl -X POST -H "Content-Type: application/json" \
+              -d '{"content": "❌ Не вдалося отримати відео"}' \
+              ${{ secrets.DISCORD_WEBHOOK }}
+            exit 1
+          fi
+
+          FILESIZE=$(echo "$INFO" | python3 -c "import sys, json; print(json.load(sys.stdin).get('filesize', 0))")
+
+          if [ -z "$FILESIZE" ] || [ "$FILESIZE" -eq 0 ]; then
+            echo "⚠️ Розмір невідомий — пробуємо завантажити..."
+          elif [ "$FILESIZE" -gt "$MAX_SIZE_BYTES" ]; then
+            echo "❌ Відео занадто велике: $(echo "$FILESIZE" / 1024 / 1024 | cut -d. -f1) MB"
+            curl -X POST -H "Content-Type: application/json" \
+              -d '{"content": "❌ Відео занадто велике"}' \
+              ${{ secrets.DISCORD_WEBHOOK }}
+            exit 1
+          fi
+
+          echo "📥 Завантаження та вивантаження на Catbox..."
+          OUTPUT_LINK=$(echo "$INFO" | yt-dlp --format "best[height<=480][ext=mp4]" --merge-output-format mp4 -o - --input-json - | \
+            curl -H "Expect:" -F "reqtype=fileupload" -F "fileToUpload=@-;filename=video.mp4;type=video/mp4" https://catbox.moe/user/api.php)
+
+          if [[ "$OUTPUT_LINK" =~ ^https:// ]]; then
+            echo "✅ Успішно: $OUTPUT_LINK"
+            echo "link=$OUTPUT_LINK" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Помилка вивантаження: $OUTPUT_LINK"
+            curl -X POST -H "Content-Type: application/json" \
+              -d '{"content": "❌ Не вдалося вивантажити на Catbox"}' \
+              ${{ secrets.DISCORD_WEBHOOK }}
+            exit 1
+          fi
+
+      - name: Send success to Discord
+        if: success()
+        run: |
+          curl -X POST -H "Content-Type: application/json" \
+          -d '{"content": "🎞️ ${{ steps.catbox.outputs.link }}"}' \
+          ${{ secrets.DISCORD_WEBHOOK }}
