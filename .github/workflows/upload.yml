@@ -109,9 +109,8 @@ except Exception as e:
               -d "{\"content\": \"$CONTENT для message $MSG_ID\"}" \
               "$WEBHOOK"
           fi
-        # Завершуємо воркфлоу, якщо контент не є відео або він занадто великий
-        if: steps.check.outputs.type != 'video'
-        run: exit 0
+          
+          exit 0
 
       - name: Process and upload video
         if: steps.check.outputs.type == 'video'
