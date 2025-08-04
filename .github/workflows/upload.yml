@@ -1,3 +1,832 @@
+2025-08-04 13:44:24,008 - discord.client - WARNING - PyNaCl is not installed, voice will NOT be supported
+2025-08-04 13:44:24,009 - discord.client - DEBUG - on_ready has successfully been registered as an event
+2025-08-04 13:44:24,010 - discord.client - DEBUG - on_message has successfully been registered as an event
+2025-08-04 13:44:24,010 - __main__ - INFO - === BOT STARTUP ===
+2025-08-04 13:44:24,011 - __main__ - INFO - 🚀 Starting bot...
+2025-08-04 13:44:24,014 - asyncio - DEBUG - Using proactor: IocpProactor
+2025-08-04 13:44:24,017 - discord.client - INFO - logging in using static token
+2025-08-04 13:44:25,506 - discord.gateway - INFO - Shard ID None has connected to Gateway (Session ID: 79cf89fc9a6ee40c04352daf05a26490).
+2025-08-04 13:44:27,518 - __main__ - INFO - ✅ Бот запущено як Васько#8401
+2025-08-04 13:44:27,522 - __main__ - INFO - === CHANNEL DIAGNOSTICS ===
+2025-08-04 13:44:27,526 - __main__ - INFO - ✅ Found results channel: catbox-results (ID: 1401861226513956884)
+2025-08-04 13:44:27,526 - __main__ - INFO - ✅ Channel type: <class 'discord.channel.TextChannel'>
+2025-08-04 13:58:29,565 - __main__ - INFO - === NEW MESSAGE EVENT ===
+2025-08-04 13:58:29,566 - __main__ - INFO - Author: mr.ivgeniy (ID: 1322574356592853074)
+2025-08-04 13:58:29,567 - __main__ - INFO - Channel: кліпи-та-огляди (ID: 1380663810850816104)
+2025-08-04 13:58:29,567 - __main__ - INFO - Content: https://pin.it/69wFsE72L
+2025-08-04 13:58:29,570 - __main__ - INFO - Is bot message: False
+2025-08-04 13:58:29,574 - __main__ - INFO - Found URLs: ['https://pin.it/69wFsE72L']
+2025-08-04 13:58:29,576 - __main__ - INFO - ✅ Processing allowed URL: https://pin.it/69wFsE72L
+2025-08-04 13:58:30,386 - __main__ - INFO - Triggering GitHub Action for URL: https://pin.it/69wFsE72L, Message ID: 1401881973395554324
+2025-08-04 13:58:30,400 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2025-08-04 13:58:30,761 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "POST /repos/IvGeniy04/video-uploader/actions/workflows/upload.yml/dispatches HTTP/1.1" 204 0
+2025-08-04 13:58:30,765 - __main__ - INFO - GitHub API response: 204 - 
+2025-08-04 13:58:30,766 - __main__ - INFO - ✅ GitHub Action triggered successfully for: https://pin.it/69wFsE72L
+2025-08-04 14:00:25,570 - __main__ - INFO - === NEW MESSAGE EVENT ===
+2025-08-04 14:00:25,571 - __main__ - INFO - Author: catbox-results#0000 (ID: 1401861326044926003)
+2025-08-04 14:00:25,586 - __main__ - INFO - Channel: catbox-results (ID: 1401861226513956884)
+2025-08-04 14:00:25,589 - __main__ - INFO - Content: 🔗 Result for message 1401881973395554324: https://files.catbox.moe/ainiwx.mp4
+2025-08-04 14:00:25,595 - __main__ - INFO - Is bot message: False
+2025-08-04 14:00:25,597 - __main__ - INFO - Found URLs: ['https://files.catbox.moe/ainiwx.mp4']
+2025-08-04 14:00:25,599 - __main__ - INFO - URL not allowed: https://files.catbox.moe/ainiwx.mp4
+2025-08-04 14:14:04,954 - discord.client - WARNING - PyNaCl is not installed, voice will NOT be supported
+2025-08-04 14:14:04,955 - discord.client - DEBUG - on_ready has successfully been registered as an event
+2025-08-04 14:14:04,956 - discord.client - DEBUG - on_message has successfully been registered as an event
+2025-08-04 14:14:04,956 - __main__ - INFO - === BOT STARTUP ===
+2025-08-04 14:14:04,957 - __main__ - INFO - 🚀 Starting bot...
+2025-08-04 14:14:04,958 - asyncio - DEBUG - Using proactor: IocpProactor
+2025-08-04 14:14:04,960 - discord.client - INFO - logging in using static token
+2025-08-04 14:14:06,452 - discord.gateway - INFO - Shard ID None has connected to Gateway (Session ID: 05bc3d5ce1028013e4ac5bda2a324b3d).
+2025-08-04 14:14:08,463 - __main__ - INFO - ✅ Бот запущено як Васько#8401
+2025-08-04 14:14:08,468 - __main__ - INFO - === CHANNEL DIAGNOSTICS ===
+2025-08-04 14:14:08,469 - __main__ - INFO - ✅ Found results channel: catbox-results (ID: 1401861226513956884)
+2025-08-04 14:14:08,471 - __main__ - INFO - ✅ Channel type: <class 'discord.channel.TextChannel'>
+2025-08-04 14:20:06,585 - __main__ - INFO - === NEW MESSAGE EVENT ===
+2025-08-04 14:20:06,929 - __main__ - INFO - Author: mr.ivgeniy (ID: 1322574356592853074)
+2025-08-04 14:20:06,931 - __main__ - INFO - Channel: кліпи-та-огляди (ID: 1380663810850816104)
+2025-08-04 14:20:06,931 - __main__ - INFO - Content: https://pin.it/3iNfufTIW
+2025-08-04 14:20:06,932 - __main__ - INFO - Is bot message: False
+2025-08-04 14:20:06,933 - __main__ - INFO - Found URLs: ['https://pin.it/3iNfufTIW']
+2025-08-04 14:20:06,933 - __main__ - INFO - ✅ Processing allowed URL: https://pin.it/3iNfufTIW
+2025-08-04 14:20:07,617 - __main__ - INFO - Triggering GitHub Action for URL: https://pin.it/3iNfufTIW, Message ID: 1401887413030228069
+2025-08-04 14:20:07,655 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2025-08-04 14:20:08,101 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "POST /repos/IvGeniy04/video-uploader/actions/workflows/upload.yml/dispatches HTTP/1.1" 204 0
+2025-08-04 14:20:08,103 - __main__ - INFO - GitHub API response: 204 - 
+2025-08-04 14:20:08,105 - __main__ - INFO - ✅ GitHub Action triggered successfully for: https://pin.it/3iNfufTIW
+2025-08-04 14:20:57,852 - __main__ - INFO - === NEW MESSAGE EVENT ===
+2025-08-04 14:20:57,855 - __main__ - INFO - Author: catbox-results#0000 (ID: 1401861326044926003)
+2025-08-04 14:20:57,858 - __main__ - INFO - Channel: catbox-results (ID: 1401861226513956884)
+2025-08-04 14:20:57,861 - __main__ - INFO - Content: 🔗 Result for message 1401887413030228069: https://files.catbox.moe/5a4y83.mp4
+2025-08-04 14:20:57,862 - __main__ - INFO - Is bot message: False
+2025-08-04 14:20:57,865 - __main__ - INFO - Message is in results channel
+2025-08-04 14:20:57,867 - __main__ - INFO - === HANDLING CATBOX RESULT ===
+2025-08-04 14:20:57,869 - __main__ - INFO - Message content: 🔗 Result for message 1401887413030228069: https://files.catbox.moe/5a4y83.mp4
+2025-08-04 14:20:57,870 - __main__ - INFO - Message ID: 1401887628164464691
+2025-08-04 14:20:57,872 - __main__ - INFO - Channel: catbox-results
+2025-08-04 14:20:57,874 - __main__ - INFO - Found Catbox URLs: ['https://files.catbox.moe/5a4y83.mp4']
+2025-08-04 14:20:57,878 - __main__ - INFO - ✅ Found original message ID: 1401887413030228069
+2025-08-04 14:20:57,879 - __main__ - INFO - Searching for original message...
+2025-08-04 14:20:57,881 - __main__ - INFO - guild.get_message failed, trying fetch_message...
+2025-08-04 14:20:57,882 - __main__ - INFO - Searching in all text channels...
+2025-08-04 14:20:57,884 - __main__ - INFO - ❌ No read permission for channel: загальний
+2025-08-04 14:20:57,889 - __main__ - INFO - Checking channel: кліпи-та-огляди
+2025-08-04 14:20:58,201 - __main__ - INFO - ✅ Found original message in channel: кліпи-та-огляди
+2025-08-04 14:20:58,450 - __main__ - INFO - === NEW MESSAGE EVENT ===
+2025-08-04 14:20:58,455 - __main__ - INFO - Author: Васько#8401 (ID: 1386953925680431165)
+2025-08-04 14:20:58,460 - __main__ - INFO - Channel: кліпи-та-огляди (ID: 1380663810850816104)
+2025-08-04 14:20:58,471 - __main__ - INFO - Content: ✅ Готово! https://files.catbox.moe/5a4y83.mp4
+2025-08-04 14:20:58,477 - __main__ - INFO - Is bot message: True
+2025-08-04 14:20:58,480 - __main__ - INFO - Message is from bot itself - ignoring
+2025-08-04 14:20:58,520 - __main__ - INFO - ✅ Successfully replied to original message
+2025-08-04 14:20:58,815 - __main__ - WARNING - Could not delete result message: 403 Forbidden (error code: 50013): Missing Permissions
+2025-08-04 14:38:51,105 - __main__ - INFO - === NEW MESSAGE EVENT ===
+2025-08-04 14:38:51,108 - __main__ - INFO - Author: mr.ivgeniy (ID: 1322574356592853074)
+2025-08-04 14:38:51,109 - __main__ - INFO - Channel: кліпи-та-огляди (ID: 1380663810850816104)
+2025-08-04 14:38:51,111 - __main__ - INFO - Content: [Готово!](https://files.catbox.moe/5a4y83.mp4)
+2025-08-04 14:38:51,113 - __main__ - INFO - Is bot message: False
+2025-08-04 14:38:51,114 - __main__ - INFO - Found URLs: ['https://files.catbox.moe/5a4y83.mp4)']
+2025-08-04 14:38:51,115 - __main__ - INFO - URL not allowed: https://files.catbox.moe/5a4y83.mp4)
+2025-08-04 14:40:43,854 - discord.client - ERROR - Attempting a reconnect in 0.70s
+Traceback (most recent call last):
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1532, in _create_direct_connection
+    hosts = await self._resolve_host(host, port, traces=traces)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1148, in _resolve_host
+    return await asyncio.shield(resolved_host_task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1179, in _resolve_host_with_throttle
+    addrs = await self._resolver.resolve(host, port, family=self._family)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\resolver.py", line 40, in resolve
+    infos = await self._loop.getaddrinfo(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\asyncio\base_events.py", line 939, in getaddrinfo
+    return await self.run_in_executor(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        None, getaddr_func, host, port, family, type, proto, flags)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\socket.py", line 977, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+socket.gaierror: [Errno 11001] getaddrinfo failed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\discord\client.py", line 701, in connect
+    self.ws = await asyncio.wait_for(coro, timeout=60.0)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\asyncio\tasks.py", line 507, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\discord\gateway.py", line 375, in from_client
+    socket = await client.http.ws_connect(str(url))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\discord\http.py", line 554, in ws_connect
+    return await self.__session.ws_connect(url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\client.py", line 1067, in _ws_connect
+    resp = await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+    ...<11 lines>...
+    )
+    ^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\client.py", line 770, in _request
+    resp = await handler(req)
+           ^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\client.py", line 725, in _connect_and_send_request
+    conn = await self._connector.connect(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        req, traces=traces, timeout=real_timeout
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 642, in connect
+    proto = await self._create_connection(req, traces, timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1209, in _create_connection
+    _, proto = await self._create_direct_connection(req, traces, timeout)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1538, in _create_direct_connection
+    raise ClientConnectorDNSError(req.connection_key, exc) from exc
+aiohttp.client_exceptions.ClientConnectorDNSError: Cannot connect to host gateway-us-east1-c.discord.gg:443 ssl:default [getaddrinfo failed]
+2025-08-04 14:40:56,281 - discord.client - ERROR - Attempting a reconnect in 2.07s
+Traceback (most recent call last):
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1532, in _create_direct_connection
+    hosts = await self._resolve_host(host, port, traces=traces)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1148, in _resolve_host
+    return await asyncio.shield(resolved_host_task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1179, in _resolve_host_with_throttle
+    addrs = await self._resolver.resolve(host, port, family=self._family)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\resolver.py", line 40, in resolve
+    infos = await self._loop.getaddrinfo(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\asyncio\base_events.py", line 939, in getaddrinfo
+    return await self.run_in_executor(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        None, getaddr_func, host, port, family, type, proto, flags)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\socket.py", line 977, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+socket.gaierror: [Errno 11001] getaddrinfo failed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\discord\client.py", line 701, in connect
+    self.ws = await asyncio.wait_for(coro, timeout=60.0)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\asyncio\tasks.py", line 507, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\discord\gateway.py", line 375, in from_client
+    socket = await client.http.ws_connect(str(url))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\discord\http.py", line 554, in ws_connect
+    return await self.__session.ws_connect(url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\client.py", line 1067, in _ws_connect
+    resp = await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+    ...<11 lines>...
+    )
+    ^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\client.py", line 770, in _request
+    resp = await handler(req)
+           ^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\client.py", line 725, in _connect_and_send_request
+    conn = await self._connector.connect(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        req, traces=traces, timeout=real_timeout
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 642, in connect
+    proto = await self._create_connection(req, traces, timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1209, in _create_connection
+    _, proto = await self._create_direct_connection(req, traces, timeout)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1538, in _create_direct_connection
+    raise ClientConnectorDNSError(req.connection_key, exc) from exc
+aiohttp.client_exceptions.ClientConnectorDNSError: Cannot connect to host gateway-us-east1-c.discord.gg:443 ssl:default [getaddrinfo failed]
+2025-08-04 14:41:09,398 - discord.client - ERROR - Attempting a reconnect in 5.22s
+Traceback (most recent call last):
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1532, in _create_direct_connection
+    hosts = await self._resolve_host(host, port, traces=traces)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1148, in _resolve_host
+    return await asyncio.shield(resolved_host_task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1179, in _resolve_host_with_throttle
+    addrs = await self._resolver.resolve(host, port, family=self._family)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\resolver.py", line 40, in resolve
+    infos = await self._loop.getaddrinfo(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\asyncio\base_events.py", line 939, in getaddrinfo
+    return await self.run_in_executor(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        None, getaddr_func, host, port, family, type, proto, flags)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\socket.py", line 977, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+socket.gaierror: [Errno 11001] getaddrinfo failed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\discord\client.py", line 701, in connect
+    self.ws = await asyncio.wait_for(coro, timeout=60.0)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\asyncio\tasks.py", line 507, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\discord\gateway.py", line 375, in from_client
+    socket = await client.http.ws_connect(str(url))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\discord\http.py", line 554, in ws_connect
+    return await self.__session.ws_connect(url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\client.py", line 1067, in _ws_connect
+    resp = await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+    ...<11 lines>...
+    )
+    ^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\client.py", line 770, in _request
+    resp = await handler(req)
+           ^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\client.py", line 725, in _connect_and_send_request
+    conn = await self._connector.connect(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        req, traces=traces, timeout=real_timeout
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 642, in connect
+    proto = await self._create_connection(req, traces, timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1209, in _create_connection
+    _, proto = await self._create_direct_connection(req, traces, timeout)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1538, in _create_direct_connection
+    raise ClientConnectorDNSError(req.connection_key, exc) from exc
+aiohttp.client_exceptions.ClientConnectorDNSError: Cannot connect to host gateway-us-east1-c.discord.gg:443 ssl:default [getaddrinfo failed]
+2025-08-04 14:41:25,666 - discord.client - ERROR - Attempting a reconnect in 4.64s
+Traceback (most recent call last):
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1532, in _create_direct_connection
+    hosts = await self._resolve_host(host, port, traces=traces)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1148, in _resolve_host
+    return await asyncio.shield(resolved_host_task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1179, in _resolve_host_with_throttle
+    addrs = await self._resolver.resolve(host, port, family=self._family)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\resolver.py", line 40, in resolve
+    infos = await self._loop.getaddrinfo(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\asyncio\base_events.py", line 939, in getaddrinfo
+    return await self.run_in_executor(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        None, getaddr_func, host, port, family, type, proto, flags)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\socket.py", line 977, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+socket.gaierror: [Errno 11001] getaddrinfo failed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\discord\client.py", line 701, in connect
+    self.ws = await asyncio.wait_for(coro, timeout=60.0)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\asyncio\tasks.py", line 507, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\discord\gateway.py", line 375, in from_client
+    socket = await client.http.ws_connect(str(url))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\discord\http.py", line 554, in ws_connect
+    return await self.__session.ws_connect(url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\client.py", line 1067, in _ws_connect
+    resp = await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+    ...<11 lines>...
+    )
+    ^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\client.py", line 770, in _request
+    resp = await handler(req)
+           ^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\client.py", line 725, in _connect_and_send_request
+    conn = await self._connector.connect(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        req, traces=traces, timeout=real_timeout
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 642, in connect
+    proto = await self._create_connection(req, traces, timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1209, in _create_connection
+    _, proto = await self._create_direct_connection(req, traces, timeout)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1538, in _create_direct_connection
+    raise ClientConnectorDNSError(req.connection_key, exc) from exc
+aiohttp.client_exceptions.ClientConnectorDNSError: Cannot connect to host gateway-us-east1-c.discord.gg:443 ssl:default [getaddrinfo failed]
+2025-08-04 14:41:41,494 - discord.client - ERROR - Attempting a reconnect in 23.45s
+Traceback (most recent call last):
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1532, in _create_direct_connection
+    hosts = await self._resolve_host(host, port, traces=traces)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1148, in _resolve_host
+    return await asyncio.shield(resolved_host_task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1179, in _resolve_host_with_throttle
+    addrs = await self._resolver.resolve(host, port, family=self._family)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\resolver.py", line 40, in resolve
+    infos = await self._loop.getaddrinfo(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\asyncio\base_events.py", line 939, in getaddrinfo
+    return await self.run_in_executor(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        None, getaddr_func, host, port, family, type, proto, flags)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\socket.py", line 977, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+socket.gaierror: [Errno 11001] getaddrinfo failed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\discord\client.py", line 701, in connect
+    self.ws = await asyncio.wait_for(coro, timeout=60.0)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\asyncio\tasks.py", line 507, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\discord\gateway.py", line 375, in from_client
+    socket = await client.http.ws_connect(str(url))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\discord\http.py", line 554, in ws_connect
+    return await self.__session.ws_connect(url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\client.py", line 1067, in _ws_connect
+    resp = await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+    ...<11 lines>...
+    )
+    ^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\client.py", line 770, in _request
+    resp = await handler(req)
+           ^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\client.py", line 725, in _connect_and_send_request
+    conn = await self._connector.connect(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        req, traces=traces, timeout=real_timeout
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 642, in connect
+    proto = await self._create_connection(req, traces, timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1209, in _create_connection
+    _, proto = await self._create_direct_connection(req, traces, timeout)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1538, in _create_direct_connection
+    raise ClientConnectorDNSError(req.connection_key, exc) from exc
+aiohttp.client_exceptions.ClientConnectorDNSError: Cannot connect to host gateway-us-east1-c.discord.gg:443 ssl:default [getaddrinfo failed]
+2025-08-04 14:42:16,212 - discord.client - ERROR - Attempting a reconnect in 55.12s
+Traceback (most recent call last):
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1532, in _create_direct_connection
+    hosts = await self._resolve_host(host, port, traces=traces)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1148, in _resolve_host
+    return await asyncio.shield(resolved_host_task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1179, in _resolve_host_with_throttle
+    addrs = await self._resolver.resolve(host, port, family=self._family)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\resolver.py", line 40, in resolve
+    infos = await self._loop.getaddrinfo(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\asyncio\base_events.py", line 939, in getaddrinfo
+    return await self.run_in_executor(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        None, getaddr_func, host, port, family, type, proto, flags)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\socket.py", line 977, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+socket.gaierror: [Errno 11001] getaddrinfo failed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\discord\client.py", line 701, in connect
+    self.ws = await asyncio.wait_for(coro, timeout=60.0)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\asyncio\tasks.py", line 507, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\discord\gateway.py", line 375, in from_client
+    socket = await client.http.ws_connect(str(url))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\discord\http.py", line 554, in ws_connect
+    return await self.__session.ws_connect(url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\client.py", line 1067, in _ws_connect
+    resp = await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+    ...<11 lines>...
+    )
+    ^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\client.py", line 770, in _request
+    resp = await handler(req)
+           ^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\client.py", line 725, in _connect_and_send_request
+    conn = await self._connector.connect(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        req, traces=traces, timeout=real_timeout
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 642, in connect
+    proto = await self._create_connection(req, traces, timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1209, in _create_connection
+    _, proto = await self._create_direct_connection(req, traces, timeout)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1538, in _create_direct_connection
+    raise ClientConnectorDNSError(req.connection_key, exc) from exc
+aiohttp.client_exceptions.ClientConnectorDNSError: Cannot connect to host gateway-us-east1-c.discord.gg:443 ssl:default [getaddrinfo failed]
+2025-08-04 14:43:22,393 - discord.client - ERROR - Attempting a reconnect in 116.96s
+Traceback (most recent call last):
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1532, in _create_direct_connection
+    hosts = await self._resolve_host(host, port, traces=traces)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1148, in _resolve_host
+    return await asyncio.shield(resolved_host_task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1179, in _resolve_host_with_throttle
+    addrs = await self._resolver.resolve(host, port, family=self._family)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\resolver.py", line 40, in resolve
+    infos = await self._loop.getaddrinfo(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\asyncio\base_events.py", line 939, in getaddrinfo
+    return await self.run_in_executor(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        None, getaddr_func, host, port, family, type, proto, flags)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\socket.py", line 977, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+socket.gaierror: [Errno 11001] getaddrinfo failed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\discord\client.py", line 701, in connect
+    self.ws = await asyncio.wait_for(coro, timeout=60.0)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\asyncio\tasks.py", line 507, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\discord\gateway.py", line 375, in from_client
+    socket = await client.http.ws_connect(str(url))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\discord\http.py", line 554, in ws_connect
+    return await self.__session.ws_connect(url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\client.py", line 1067, in _ws_connect
+    resp = await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+    ...<11 lines>...
+    )
+    ^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\client.py", line 770, in _request
+    resp = await handler(req)
+           ^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\client.py", line 725, in _connect_and_send_request
+    conn = await self._connector.connect(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        req, traces=traces, timeout=real_timeout
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 642, in connect
+    proto = await self._create_connection(req, traces, timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1209, in _create_connection
+    _, proto = await self._create_direct_connection(req, traces, timeout)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1538, in _create_direct_connection
+    raise ClientConnectorDNSError(req.connection_key, exc) from exc
+aiohttp.client_exceptions.ClientConnectorDNSError: Cannot connect to host gateway-us-east1-c.discord.gg:443 ssl:default [getaddrinfo failed]
+2025-08-04 14:45:30,416 - discord.client - ERROR - Attempting a reconnect in 132.88s
+Traceback (most recent call last):
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1532, in _create_direct_connection
+    hosts = await self._resolve_host(host, port, traces=traces)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1148, in _resolve_host
+    return await asyncio.shield(resolved_host_task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1179, in _resolve_host_with_throttle
+    addrs = await self._resolver.resolve(host, port, family=self._family)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\resolver.py", line 40, in resolve
+    infos = await self._loop.getaddrinfo(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\asyncio\base_events.py", line 939, in getaddrinfo
+    return await self.run_in_executor(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        None, getaddr_func, host, port, family, type, proto, flags)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\socket.py", line 977, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+socket.gaierror: [Errno 11001] getaddrinfo failed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\discord\client.py", line 701, in connect
+    self.ws = await asyncio.wait_for(coro, timeout=60.0)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\asyncio\tasks.py", line 507, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\discord\gateway.py", line 375, in from_client
+    socket = await client.http.ws_connect(str(url))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\discord\http.py", line 554, in ws_connect
+    return await self.__session.ws_connect(url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\client.py", line 1067, in _ws_connect
+    resp = await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+    ...<11 lines>...
+    )
+    ^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\client.py", line 770, in _request
+    resp = await handler(req)
+           ^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\client.py", line 725, in _connect_and_send_request
+    conn = await self._connector.connect(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        req, traces=traces, timeout=real_timeout
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 642, in connect
+    proto = await self._create_connection(req, traces, timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1209, in _create_connection
+    _, proto = await self._create_direct_connection(req, traces, timeout)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1538, in _create_direct_connection
+    raise ClientConnectorDNSError(req.connection_key, exc) from exc
+aiohttp.client_exceptions.ClientConnectorDNSError: Cannot connect to host gateway-us-east1-c.discord.gg:443 ssl:default [getaddrinfo failed]
+2025-08-04 14:47:54,353 - discord.client - ERROR - Attempting a reconnect in 92.55s
+Traceback (most recent call last):
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1532, in _create_direct_connection
+    hosts = await self._resolve_host(host, port, traces=traces)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1148, in _resolve_host
+    return await asyncio.shield(resolved_host_task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1179, in _resolve_host_with_throttle
+    addrs = await self._resolver.resolve(host, port, family=self._family)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\resolver.py", line 40, in resolve
+    infos = await self._loop.getaddrinfo(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\asyncio\base_events.py", line 939, in getaddrinfo
+    return await self.run_in_executor(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        None, getaddr_func, host, port, family, type, proto, flags)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\socket.py", line 977, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+socket.gaierror: [Errno 11001] getaddrinfo failed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\discord\client.py", line 701, in connect
+    self.ws = await asyncio.wait_for(coro, timeout=60.0)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rudik\AppData\Local\Programs\Python\Python313\Lib\asyncio\tasks.py", line 507, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\discord\gateway.py", line 375, in from_client
+    socket = await client.http.ws_connect(str(url))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\discord\http.py", line 554, in ws_connect
+    return await self.__session.ws_connect(url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\client.py", line 1067, in _ws_connect
+    resp = await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+    ...<11 lines>...
+    )
+    ^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\client.py", line 770, in _request
+    resp = await handler(req)
+           ^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\client.py", line 725, in _connect_and_send_request
+    conn = await self._connector.connect(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        req, traces=traces, timeout=real_timeout
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 642, in connect
+    proto = await self._create_connection(req, traces, timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1209, in _create_connection
+    _, proto = await self._create_direct_connection(req, traces, timeout)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Discord_Bot\Bot_Gemini\All_Next_009\Games\downloader\venv\Lib\site-packages\aiohttp\connector.py", line 1538, in _create_direct_connection
+    raise ClientConnectorDNSError(req.connection_key, exc) from exc
+aiohttp.client_exceptions.ClientConnectorDNSError: Cannot connect to host gateway-us-east1-c.discord.gg:443 ssl:default [getaddrinfo failed]
+2025-08-04 14:49:27,352 - discord.gateway - INFO - Shard ID None session has been invalidated.
+2025-08-04 14:49:33,039 - discord.gateway - INFO - Shard ID None has connected to Gateway (Session ID: 6c4b30e34ec717658934a0a7cf386a9a).
+2025-08-04 14:49:35,049 - __main__ - INFO - ✅ Бот запущено як Васько#8401
+2025-08-04 14:49:35,051 - __main__ - INFO - === CHANNEL DIAGNOSTICS ===
+2025-08-04 14:49:35,052 - __main__ - INFO - ✅ Found results channel: catbox-results (ID: 1401861226513956884)
+2025-08-04 14:49:35,053 - __main__ - INFO - ✅ Channel type: <class 'discord.channel.TextChannel'>
+2025-08-04 15:01:33,460 - __main__ - INFO - === NEW MESSAGE EVENT ===
+2025-08-04 15:01:33,568 - __main__ - INFO - Author: kotuktetyana (ID: 1352913132535681064)
+2025-08-04 15:01:33,571 - __main__ - INFO - Channel: літери_та_слова🔠 (ID: 1398015663724953741)
+2025-08-04 15:01:33,573 - __main__ - INFO - Content: # ханька
+2025-08-04 15:01:33,578 - __main__ - INFO - Is bot message: False
+2025-08-04 15:01:33,580 - __main__ - INFO - Found URLs: []
+2025-08-04 15:01:33,582 - __main__ - INFO - No URLs found in message
+2025-08-04 15:01:33,986 - __main__ - INFO - === NEW MESSAGE EVENT ===
+2025-08-04 15:01:34,003 - __main__ - INFO - Author: Васько#8401 (ID: 1386953925680431165)
+2025-08-04 15:01:34,008 - __main__ - INFO - Channel: літери_та_слова🔠 (ID: 1398015663724953741)
+2025-08-04 15:01:34,009 - __main__ - INFO - Content: ❌ <@1352913132535681064>, таке слово вже було.
+# Ханька
+2025-08-04 15:01:34,016 - __main__ - INFO - Is bot message: True
+2025-08-04 15:01:34,016 - __main__ - INFO - Message is from bot itself - ignoring
+2025-08-04 15:01:49,364 - __main__ - INFO - === NEW MESSAGE EVENT ===
+2025-08-04 15:01:49,374 - __main__ - INFO - Author: kotuktetyana (ID: 1352913132535681064)
+2025-08-04 15:01:49,376 - __main__ - INFO - Channel: літери_та_слова🔠 (ID: 1398015663724953741)
+2025-08-04 15:01:49,377 - __main__ - INFO - Content: # хака
+2025-08-04 15:01:49,379 - __main__ - INFO - Is bot message: False
+2025-08-04 15:01:49,381 - __main__ - INFO - Found URLs: []
+2025-08-04 15:01:49,381 - __main__ - INFO - No URLs found in message
+2025-08-04 15:19:28,914 - discord.gateway - INFO - Shard ID None has successfully RESUMED session 6c4b30e34ec717658934a0a7cf386a9a.
+2025-08-04 15:24:42,495 - __main__ - INFO - === NEW MESSAGE EVENT ===
+2025-08-04 15:24:42,496 - __main__ - INFO - Author: lilia08594 (ID: 1374130553900630111)
+2025-08-04 15:24:42,497 - __main__ - INFO - Channel: чат🗣 (ID: 1373985551354433690)
+2025-08-04 15:24:42,498 - __main__ - INFO - Content: Его никто не слушает до кинця, а он красивый этот марш....
+2025-08-04 15:24:42,499 - __main__ - INFO - Is bot message: False
+2025-08-04 15:24:42,500 - __main__ - INFO - Found URLs: []
+2025-08-04 15:24:42,500 - __main__ - INFO - No URLs found in message
+2025-08-04 15:27:02,265 - __main__ - INFO - === NEW MESSAGE EVENT ===
+2025-08-04 15:27:02,272 - __main__ - INFO - Author: lilia08594 (ID: 1374130553900630111)
+2025-08-04 15:27:02,274 - __main__ - INFO - Channel: чат🗣 (ID: 1373985551354433690)
+2025-08-04 15:27:02,276 - __main__ - INFO - Content: А де наш жених? Пише план керівництва жінками.?
+2025-08-04 15:27:02,278 - __main__ - INFO - Is bot message: False
+2025-08-04 15:27:02,280 - __main__ - INFO - Found URLs: []
+2025-08-04 15:27:02,281 - __main__ - INFO - No URLs found in message
+2025-08-04 15:29:05,566 - __main__ - INFO - === NEW MESSAGE EVENT ===
+2025-08-04 15:29:05,574 - __main__ - INFO - Author: kotuktetyana (ID: 1352913132535681064)
+2025-08-04 15:29:05,575 - __main__ - INFO - Channel: за-бугром🌍 (ID: 1374133199734571209)
+2025-08-04 15:29:05,576 - __main__ - INFO - Content: 
+2025-08-04 15:29:05,579 - __main__ - INFO - Is bot message: False
+2025-08-04 15:29:05,580 - __main__ - INFO - Found URLs: []
+2025-08-04 15:29:05,582 - __main__ - INFO - No URLs found in message
+2025-08-04 15:30:25,160 - __main__ - INFO - === NEW MESSAGE EVENT ===
+2025-08-04 15:30:25,200 - __main__ - INFO - Author: lilia08594 (ID: 1374130553900630111)
+2025-08-04 15:30:25,201 - __main__ - INFO - Channel: за-бугром🌍 (ID: 1374133199734571209)
+2025-08-04 15:30:25,202 - __main__ - INFO - Content: Таня, ну шо ти с ними делать будешь?
+2025-08-04 15:30:25,204 - __main__ - INFO - Is bot message: False
+2025-08-04 15:30:25,205 - __main__ - INFO - Found URLs: []
+2025-08-04 15:30:25,206 - __main__ - INFO - No URLs found in message
+2025-08-04 15:31:01,594 - __main__ - INFO - === NEW MESSAGE EVENT ===
+2025-08-04 15:31:01,600 - __main__ - INFO - Author: lilia08594 (ID: 1374130553900630111)
+2025-08-04 15:31:01,602 - __main__ - INFO - Channel: за-бугром🌍 (ID: 1374133199734571209)
+2025-08-04 15:31:01,603 - __main__ - INFO - Content: Кушать их невозможно, они никакие.
+2025-08-04 15:31:01,605 - __main__ - INFO - Is bot message: False
+2025-08-04 15:31:01,606 - __main__ - INFO - Found URLs: []
+2025-08-04 15:31:01,607 - __main__ - INFO - No URLs found in message
+2025-08-04 15:37:39,119 - discord.client - WARNING - PyNaCl is not installed, voice will NOT be supported
+2025-08-04 15:37:39,130 - discord.client - DEBUG - on_ready has successfully been registered as an event
+2025-08-04 15:37:39,135 - discord.client - DEBUG - on_message has successfully been registered as an event
+2025-08-04 15:37:39,209 - __main__ - INFO - === BOT STARTUP ===
+2025-08-04 15:37:39,224 - __main__ - INFO - 🚀 Starting bot...
+2025-08-04 15:37:39,227 - asyncio - DEBUG - Using proactor: IocpProactor
+2025-08-04 15:37:39,239 - discord.client - INFO - logging in using static token
+2025-08-04 15:37:40,606 - discord.gateway - INFO - Shard ID None has connected to Gateway (Session ID: 654032887889258380afcaa75e9d8975).
+2025-08-04 15:37:42,617 - __main__ - INFO - ✅ Бот запущено як Васько#8401
+2025-08-04 15:37:45,744 - __main__ - INFO - === CHANNEL DIAGNOSTICS ===
+2025-08-04 15:37:45,745 - __main__ - INFO - ✅ Found results channel: catbox-results (ID: 1401861226513956884)
+2025-08-04 15:37:45,746 - __main__ - INFO - ✅ Channel type: <class 'discord.channel.TextChannel'>
+2025-08-04 15:42:14,488 - __main__ - INFO - === NEW MESSAGE EVENT ===
+2025-08-04 15:42:14,566 - __main__ - INFO - Author: mr.ivgeniy (ID: 1322574356592853074)
+2025-08-04 15:42:14,573 - __main__ - INFO - Channel: кліпи-та-огляди (ID: 1380663810850816104)
+2025-08-04 15:42:14,575 - __main__ - INFO - Content: https://pin.it/5rGm2Tvny
+2025-08-04 15:42:14,575 - __main__ - INFO - Is bot message: False
+2025-08-04 15:42:14,577 - __main__ - INFO - Found URLs: ['https://pin.it/5rGm2Tvny']
+2025-08-04 15:42:14,578 - __main__ - INFO - ✅ Processing allowed URL: https://pin.it/5rGm2Tvny
+2025-08-04 15:42:15,213 - __main__ - INFO - Triggering GitHub Action for URL: https://pin.it/5rGm2Tvny, Message ID: 1401908081016967320
+2025-08-04 15:42:15,218 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2025-08-04 15:42:15,640 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "POST /repos/IvGeniy04/video-uploader/actions/workflows/upload.yml/dispatches HTTP/1.1" 204 0
+2025-08-04 15:42:15,765 - __main__ - INFO - GitHub API response: 204 - 
+2025-08-04 15:42:15,766 - __main__ - INFO - ✅ GitHub Action triggered successfully for: https://pin.it/5rGm2Tvny
+2025-08-04 15:44:05,046 - __main__ - INFO - === NEW MESSAGE EVENT ===
+2025-08-04 15:44:05,048 - __main__ - INFO - Author: catbox-results#0000 (ID: 1401861326044926003)
+2025-08-04 15:44:05,052 - __main__ - INFO - Channel: catbox-results (ID: 1401861226513956884)
+2025-08-04 15:44:05,054 - __main__ - INFO - Content: 🔗 Result for message 1401908081016967320: https://files.catbox.moe/8w0kfj.mp4
+2025-08-04 15:44:05,055 - __main__ - INFO - Is bot message: False
+2025-08-04 15:44:05,058 - __main__ - INFO - Message is in results channel
+2025-08-04 15:44:05,059 - __main__ - INFO - === HANDLING CATBOX RESULT ===
+2025-08-04 15:44:05,061 - __main__ - INFO - Message content: 🔗 Result for message 1401908081016967320: https://files.catbox.moe/8w0kfj.mp4
+2025-08-04 15:44:05,062 - __main__ - INFO - Message ID: 1401908544457932882
+2025-08-04 15:44:05,063 - __main__ - INFO - Channel: catbox-results
+2025-08-04 15:44:05,065 - __main__ - INFO - Found Catbox URLs: ['https://files.catbox.moe/8w0kfj.mp4']
+2025-08-04 15:44:05,067 - __main__ - INFO - ✅ Found original message ID: 1401908081016967320
+2025-08-04 15:44:05,068 - __main__ - INFO - Searching for original message...
+2025-08-04 15:44:05,069 - __main__ - INFO - guild.get_message failed, trying fetch_message...
+2025-08-04 15:44:05,070 - __main__ - INFO - Searching in all text channels...
+2025-08-04 15:44:05,072 - __main__ - INFO - ❌ No read permission for channel: загальний
+2025-08-04 15:44:05,072 - __main__ - INFO - Checking channel: кліпи-та-огляди
+2025-08-04 15:44:05,456 - __main__ - INFO - ✅ Found original message in channel: кліпи-та-огляди
+2025-08-04 15:44:06,589 - __main__ - INFO - === NEW MESSAGE EVENT ===
+2025-08-04 15:44:06,595 - __main__ - INFO - Author: Васько#8401 (ID: 1386953925680431165)
+2025-08-04 15:44:06,596 - __main__ - INFO - Channel: кліпи-та-огляди (ID: 1380663810850816104)
+2025-08-04 15:44:06,605 - __main__ - INFO - Content: ✅ [Готово!](https://files.catbox.moe/8w0kfj.mp4)
+2025-08-04 15:44:06,607 - __main__ - INFO - Is bot message: True
+2025-08-04 15:44:06,609 - __main__ - INFO - Message is from bot itself - ignoring
+2025-08-04 15:44:06,690 - __main__ - INFO - ✅ Successfully replied to original message
+2025-08-04 15:44:07,052 - __main__ - INFO - ✅ Deleted result message from catbox-results channel
+2025-08-04 15:48:41,522 - __main__ - INFO - === NEW MESSAGE EVENT ===
+2025-08-04 15:48:41,525 - __main__ - INFO - Author: kotuktetyana (ID: 1352913132535681064)
+2025-08-04 15:48:41,527 - __main__ - INFO - Channel: за-бугром🌍 (ID: 1374133199734571209)
+2025-08-04 15:48:41,530 - __main__ - INFO - Content: Лілі ка сугоооооо
+2025-08-04 15:48:41,531 - __main__ - INFO - Is bot message: False
+2025-08-04 15:48:41,533 - __main__ - INFO - Found URLs: []
+2025-08-04 15:48:41,534 - __main__ - INFO - No URLs found in message
 name: Upload Video to Catbox
 
 on:
@@ -31,115 +860,53 @@ jobs:
           pip install git+https://github.com/yt-dlp/yt-dlp.git
           pip install requests
 
-      - name: Warm up Facebook link (if needed)
-        run: |
-          VIDEO_URL="${{ github.event.inputs.url }}"
-          VIDEO_URL=$(echo "$VIDEO_URL" | xargs)
-          MESSAGE_ID="${{ github.event.inputs.message_id }}"
-          
-          # Якщо це Facebook — "прогріваємо" посилання
-          if [[ "$VIDEO_URL" == *"facebook.com"* ]] || [[ "$VIDEO_URL" == *"fb.watch"* ]]; then
-            echo "🔥 Прогрів Facebook посилання..."
-            curl -s -L -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36" \
-              --max-time 30 \
-              "$VIDEO_URL" > /dev/null 2>&1 || echo "Прогрів завершено (може бути помилка - це нормально)"
-            sleep 3
-          fi
-
-      - name: Check content type and process
-        id: content_processor
-        run: |
-          VIDEO_URL="${{ github.event.inputs.url }}"
-          VIDEO_URL=$(echo "$VIDEO_URL" | xargs)
-          MESSAGE_ID="${{ github.event.inputs.message_id }}"
-          
-          echo "🔍 Перевірка типу контенту: $VIDEO_URL"
-          
-          # Отримуємо інформацію без завантаження
-          INFO=$(yt-dlp --dump-json --simulate "$VIDEO_URL" 2>/dev/null)
-          
-          if [ -z "$INFO" ]; then
-            echo "type=error" >> $GITHUB_OUTPUT
-            echo "message=Не вдалося отримати інформацію про посилання" >> $GITHUB_OUTPUT
-            if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ] && [ "$MESSAGE_ID" != "" ]; then
-              curl -X POST -H "Content-Type: application/json" \
-                -d '{"content": "❌ Не вдалося отримати інформацію про посилання для message '"$MESSAGE_ID"'"}' \
-                ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
-            fi
-            exit 0
-          fi
-          
-          # Перевіряємо тип контенту
-          HAS_VIDEO=$(echo "$INFO" | python3 -c "
-import sys, json
-try:
-    info = json.load(sys.stdin)
-    formats = info.get('formats', [])
-    # Шукаємо відеоформати
-    if any(f.get('vcodec', 'none') != 'none' or 'video' in str(f.get('format', '')) for f in formats):
-        print('video')
-    # Шукаємо аудіоформати
-    elif any(f.get('acodec', 'none') != 'none' or 'audio' in str(f.get('format', '')) for f in formats):
-        print('audio')
-    # Шукаємо картинки
-    elif info.get('thumbnail') or any('image' in str(f.get('ext', '')) for f in formats):
-        print('image')
-    else:
-        print('text')
-except Exception as e:
-    print('unknown')
-")
-          
-          echo "type=$HAS_VIDEO" >> $GITHUB_OUTPUT
-          echo "title=$(echo "$INFO" | python3 -c "import sys, json; print(json.load(sys.stdin).get('title', 'Без назви'))")" >> $GITHUB_OUTPUT
-          
-          # Якщо це відео — обробляємо як звичайно
-          if [ "$HAS_VIDEO" = "video" ]; then
-            echo "processing=video" >> $GITHUB_OUTPUT
-          else
-            # Для інших типів — повідомляємо
-            CONTENT_TYPE=""
-            case "$HAS_VIDEO" in
-              "image")
-                CONTENT_TYPE="🖼️ Картинка"
-                ;;
-              "audio")
-                CONTENT_TYPE="🎵 Аудіо"
-                ;;
-              "text")
-                CONTENT_TYPE="📝 Текстовий пост"
-                ;;
-              *)
-                CONTENT_TYPE="📄 Невідомий тип контенту"
-                ;;
-            esac
-            
-            if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ] && [ "$MESSAGE_ID" != "" ]; then
-              curl -X POST -H "Content-Type: application/json" \
-                -d '{"content": "'"$CONTENT_TYPE"' для message '"$MESSAGE_ID"'"}' \
-                ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
-            fi
-            echo "processing=skip" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
       - name: Check and upload video
-        if: steps.content_processor.outputs.processing == 'video'
         id: catbox
         run: |
           # Очищаємо URL
           VIDEO_URL="${{ github.event.inputs.url }}"
           VIDEO_URL=$(echo "$VIDEO_URL" | xargs)
-          MESSAGE_ID="${{ github.event.inputs.message_id }}"
           MAX_SIZE_BYTES=$((180 * 1024 * 1024))  # 180 MB
+
+          echo "🔍 Отримання інформації про відео: $VIDEO_URL"
+          
+          # Отримуємо інформацію для перевірки розміру
+          INFO=$(yt-dlp \
+            --dump-json \
+            --allow-unplayable-formats \
+            --extractor-args "pinterest:use_webpage=True" \
+            --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36" \
+            --no-check-certificate \
+            "$VIDEO_URL" 2>/dev/null)
+
+          if [ -z "$INFO" ]; then
+            echo "❌ Не вдалося отримати інформацію про відео"
+            if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ]; then
+              curl -X POST -H "Content-Type: application/json" \
+                -d '{"content": "❌ Не вдалося отримати відео для message ${{ github.event.inputs.message_id }}"}' \
+                ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
+            fi
+            exit 1
+          fi
+
+          FILESIZE=$(echo "$INFO" | python3 -c "import sys, json; print(json.load(sys.stdin).get('filesize', 0))")
+
+          if [ -z "$FILESIZE" ] || [ "$FILESIZE" -eq 0 ]; then
+            echo "⚠️ Розмір невідомий — пробуємо завантажити..."
+          elif [ "$FILESIZE" -gt "$MAX_SIZE_BYTES" ]; then
+            echo "❌ Відео занадто велике: більше 180 MB"
+            if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ]; then
+              curl -X POST -H "Content-Type: application/json" \
+                -d '{"content": "❌ Відео занадто велике (макс. 180 МБ) для message ${{ github.event.inputs.message_id }}"}' \
+                ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
+            fi
+            exit 1
+          fi
 
           echo "📥 Завантаження та вивантаження на Catbox..."
           
           # Завантажуємо і одразу вивантажуємо
           OUTPUT_LINK=$(yt-dlp \
-            --retries 3 \
-            --fragment-retries 3 \
-            --sleep-interval 2 \
             --merge-output-format mp4 \
             --allow-unplayable-formats \
             --extractor-args "pinterest:use_webpage=True" \
@@ -157,16 +924,16 @@ except Exception as e:
             echo "link=$OUTPUT_LINK" >> $GITHUB_OUTPUT
           else
             echo "❌ Помилка вивантаження: $OUTPUT_LINK"
-            if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ] && [ "$MESSAGE_ID" != "" ]; then
+            if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ]; then
               curl -X POST -H "Content-Type: application/json" \
-                -d '{"content": "❌ Не вдалося вивантажити на Catbox для message '"$MESSAGE_ID"'"}' \
+                -d '{"content": "❌ Не вдалося вивантажити на Catbox для message ${{ github.event.inputs.message_id }}"}' \
                 ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
             fi
             exit 1
           fi
 
       - name: Send result to results channel
-        if: success() && steps.content_processor.outputs.processing == 'video'
+        if: success()
         run: |
           MESSAGE_ID="${{ github.event.inputs.message_id }}"
           if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ] && [ "$MESSAGE_ID" != "" ]; then
