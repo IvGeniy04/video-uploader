@@ -15,50 +15,48 @@ on:
 jobs:
   upload:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Set up Python 3.11
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
 
-      - name: Install ffmpeg
+      - name: Install dependencies
         run: |
           sudo apt update
           sudo apt install -y ffmpeg
-
-      - name: Install dependencies (yt-dlp, requests)
-        run: |
           pip install git+https://github.com/yt-dlp/yt-dlp.git
           pip install requests
 
-      - name: Warm up Facebook (для стабільності, якщо URL з Facebook)
+      - name: Warm up Facebook (if needed)
         if: contains(github.event.inputs.url, 'facebook.com') || contains(github.event.inputs.url, 'fb.watch')
         run: |
-          curl -s -L -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
+          curl -s -L -H "User-Agent: Mozilla/5.0" \
             --max-time 30 "${{ github.event.inputs.url }}" > /dev/null 2>&1 || true
           sleep 3
 
-      - name: Check content and size
+      - name: Check content type and size
         id: check
         run: |
-          MAX_SIZE_BYTES=$((180 * 1024 * 1024))
+          MAX_SIZE=$((180 * 1024 * 1024))
           URL="${{ github.event.inputs.url }}"
-          
-          INFO=$(yt-dlp --dump-json --simulate --allow-unplayable-formats --extractor-args "pinterest:use_webpage=True" --no-check-certificate "$URL" 2>/dev/null)
-          
+
+          INFO=$(yt-dlp --dump-json --simulate --allow-unplayable-formats \
+            --extractor-args "pinterest:use_webpage=True" --no-check-certificate "$URL" 2>/dev/null)
+
           if [ -z "$INFO" ]; then
             echo "type=error" >> "$GITHUB_OUTPUT"
             echo "error_message=❌ Не вдалося отримати інформацію про вміст" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          
-          PYTHON_OUTPUT=$(echo "$INFO" | python3 -c "
+
+          RESULT=$(echo "$INFO" | python3 -c "
 import sys, json
 try:
   info = json.load(sys.stdin)
-  filesize = info.get('filesize', 0)
-  if filesize > 0 and filesize > $MAX_SIZE_BYTES:
-    print('type=too_large|size_too_large|' + str(filesize))
+  if info.get('filesize', 0) > $MAX_SIZE:
+    print('type=too_large')
     sys.exit()
   formats = info.get('formats', [])
   if any(f.get('vcodec', 'none') != 'none' for f in formats):
@@ -70,53 +68,58 @@ try:
   else:
     print('type=text')
 except Exception as e:
-  print('type=unknown|error=' + str(e))
+  print('type=error')
 ")
 
-          if [[ "$PYTHON_OUTPUT" == type=too_large* ]]; then
-            echo "type=too_large" >> "$GITHUB_OUTPUT"
-            echo "error_message=❌ Відео занадто велике (макс. 180 МБ)" >> "$GITHUB_OUTPUT"
-          else
-            echo "$PYTHON_OUTPUT" >> "$GITHUB_OUTPUT"
-          fi
+          echo "$RESULT" >> "$GITHUB_OUTPUT"
 
-      - name: Handle non-video or too large content
+      - name: Handle non-video content or errors
         if: steps.check.outputs.type != 'video'
         run: |
           TYPE="${{ steps.check.outputs.type }}"
           MSG_ID="${{ github.event.inputs.message_id }}"
           WEBHOOK="${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
           CONTENT=""
+
           case "$TYPE" in
             "too_large") CONTENT="❌ Відео занадто велике (макс. 180 МБ)" ;;
             "image") CONTENT="🖼️ Картинка" ;;
             "audio") CONTENT="🎵 Аудіо" ;;
             "text") CONTENT="📝 Текстовий пост" ;;
-            "error") CONTENT="${{ steps.check.outputs.error_message }}" ;;
+            "error") CONTENT="❌ Помилка обробки відео" ;;
             *) CONTENT="📄 Невідомий контент" ;;
           esac
-          if [ "$WEBHOOK" != "" ] && [ -n "$MSG_ID" ]; then
-            curl -X POST -H "Content-Type: application/json" \
-              -d "{\"content\": \"$CONTENT для message $MSG_ID\"}" \
-              "$WEBHOOK"
+
+          if [ -n "$WEBHOOK" ]; then
+            if [ -n "$MSG_ID" ]; then
+              curl -X POST -H "Content-Type: application/json" \
+                -d "{\"content\": \"$CONTENT для message $MSG_ID\"}" \
+                "$WEBHOOK"
+            else
+              curl -X POST -H "Content-Type: application/json" \
+                -d "{\"content\": \"$CONTENT\"}" \
+                "$WEBHOOK"
+            fi
           fi
 
-      - name: Process and upload video
+      - name: Download and upload to Catbox
         if: steps.check.outputs.type == 'video'
         id: upload
         run: |
           URL="${{ github.event.inputs.url }}"
-          echo "📥 Завантаження та вивантаження на Catbox..."
+          echo "📥 Завантаження і вивантаження..."
+
           LINK=$(yt-dlp \
             --retries 3 --fragment-retries 3 --sleep-interval 2 \
             --merge-output-format mp4 --allow-unplayable-formats \
             --extractor-args "pinterest:use_webpage=True" \
-            --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
+            --user-agent "Mozilla/5.0" \
             --no-check-certificate --output - "$URL" | \
             curl -s -H "Expect:" \
-            -F "reqtype=fileupload" \
-            -F "fileToUpload=@-;filename=video.mp4;type=video/mp4" \
-            https://catbox.moe/user/api.php)
+              -F "reqtype=fileupload" \
+              -F "fileToUpload=@-;filename=video.mp4;type=video/mp4" \
+              https://catbox.moe/user/api.php)
+
           if [[ "$LINK" =~ ^https:// ]]; then
             echo "link=$LINK" >> "$GITHUB_OUTPUT"
           else
@@ -130,7 +133,8 @@ except Exception as e:
           LINK="${{ steps.upload.outputs.link }}"
           MSG_ID="${{ github.event.inputs.message_id }}"
           WEBHOOK="${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
-          if [ "$WEBHOOK" != "" ]; then
+
+          if [ -n "$WEBHOOK" ]; then
             if [ -n "$MSG_ID" ]; then
               curl -X POST -H "Content-Type: application/json" \
                 -d "{\"content\": \"🔗 Результат для message $MSG_ID: $LINK\"}" \
