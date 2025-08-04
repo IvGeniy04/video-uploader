@@ -1,7 +1,6 @@
 name: Upload Video to Catbox
 
 on:
-  # Цей блок дозволяє запускати робочий процес вручну з інтерфейсу GitHub Actions
   workflow_dispatch:
     inputs:
       url:
@@ -45,26 +44,22 @@ jobs:
           MAX_SIZE_BYTES=$((180 * 1024 * 1024))
           URL="${{ github.event.inputs.url }}"
           
-          # Отримуємо JSON-інформацію про вміст
           INFO=$(yt-dlp --dump-json --simulate --allow-unplayable-formats --extractor-args "pinterest:use_webpage=True" --no-check-certificate "$URL" 2>/dev/null)
           
           if [ -z "$INFO" ]; then
-            echo "type=error" >> $GITHUB_OUTPUT
-            echo "error_message=❌ Не вдалося отримати інформацію про вміст" >> $GITHUB_OUTPUT
+            echo "type=error" >> "$GITHUB_OUTPUT"
+            echo "error_message=❌ Не вдалося отримати інформацію про вміст" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           
-          # Використовуємо Python для визначення типу та розміру
           PYTHON_OUTPUT=$(echo "$INFO" | python3 -c "
 import sys, json
 try:
   info = json.load(sys.stdin)
   filesize = info.get('filesize', 0)
-  
   if filesize > 0 and filesize > $MAX_SIZE_BYTES:
-    print(f'size_too_large|{filesize}')
+    print('type=too_large|size_too_large|' + str(filesize))
     sys.exit()
-
   formats = info.get('formats', [])
   if any(f.get('vcodec', 'none') != 'none' for f in formats):
     print('type=video')
@@ -74,17 +69,15 @@ try:
     print('type=image')
   else:
     print('type=text')
-
 except Exception as e:
-  print(f'type=unknown|error={e}')
+  print('type=unknown|error=' + str(e))
 ")
-          
-          # Обробляємо результат Python-скрипта
-          if [[ "$PYTHON_OUTPUT" == size_too_large* ]]; then
-            echo "type=too_large" >> $GITHUB_OUTPUT
-            echo "error_message=❌ Відео занадто велике (макс. 180 МБ)" >> $GITHUB_OUTPUT
+
+          if [[ "$PYTHON_OUTPUT" == type=too_large* ]]; then
+            echo "type=too_large" >> "$GITHUB_OUTPUT"
+            echo "error_message=❌ Відео занадто велике (макс. 180 МБ)" >> "$GITHUB_OUTPUT"
           else
-            echo "$PYTHON_OUTPUT" >> $GITHUB_OUTPUT
+            echo "$PYTHON_OUTPUT" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Handle non-video or too large content
@@ -94,7 +87,6 @@ except Exception as e:
           MSG_ID="${{ github.event.inputs.message_id }}"
           WEBHOOK="${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
           CONTENT=""
-          
           case "$TYPE" in
             "too_large") CONTENT="❌ Відео занадто велике (макс. 180 МБ)" ;;
             "image") CONTENT="🖼️ Картинка" ;;
@@ -103,23 +95,18 @@ except Exception as e:
             "error") CONTENT="${{ steps.check.outputs.error_message }}" ;;
             *) CONTENT="📄 Невідомий контент" ;;
           esac
-          
           if [ "$WEBHOOK" != "" ] && [ -n "$MSG_ID" ]; then
             curl -X POST -H "Content-Type: application/json" \
               -d "{\"content\": \"$CONTENT для message $MSG_ID\"}" \
               "$WEBHOOK"
           fi
-          
-          exit 0
 
       - name: Process and upload video
         if: steps.check.outputs.type == 'video'
         id: upload
         run: |
           URL="${{ github.event.inputs.url }}"
-          
           echo "📥 Завантаження та вивантаження на Catbox..."
-          
           LINK=$(yt-dlp \
             --retries 3 --fragment-retries 3 --sleep-interval 2 \
             --merge-output-format mp4 --allow-unplayable-formats \
@@ -130,9 +117,8 @@ except Exception as e:
             -F "reqtype=fileupload" \
             -F "fileToUpload=@-;filename=video.mp4;type=video/mp4" \
             https://catbox.moe/user/api.php)
-          
           if [[ "$LINK" =~ ^https:// ]]; then
-            echo "link=$LINK" >> $GITHUB_OUTPUT
+            echo "link=$LINK" >> "$GITHUB_OUTPUT"
           else
             echo "❌ Помилка вивантаження: $LINK"
             exit 1
@@ -144,7 +130,6 @@ except Exception as e:
           LINK="${{ steps.upload.outputs.link }}"
           MSG_ID="${{ github.event.inputs.message_id }}"
           WEBHOOK="${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
-          
           if [ "$WEBHOOK" != "" ]; then
             if [ -n "$MSG_ID" ]; then
               curl -X POST -H "Content-Type: application/json" \
