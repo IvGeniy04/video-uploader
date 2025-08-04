@@ -7,6 +7,10 @@ on:
         description: 'Video URL (TikTok, Instagram, Pinterest, etc.)'
         required: true
         type: string
+      message_id:
+        description: 'Discord Message ID for response tracking'
+        required: false
+        type: string
 
 jobs:
   upload:
@@ -48,9 +52,11 @@ jobs:
 
           if [ -z "$INFO" ]; then
             echo "❌ Не вдалося отримати інформацію про відео"
-            curl -X POST -H "Content-Type: application/json" \
-              -d '{"content": "❌ Не вдалося отримати відео"}' \
-              ${{ secrets.DISCORD_WEBHOOK }}
+            if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ]; then
+              curl -X POST -H "Content-Type: application/json" \
+                -d '{"content": "❌ Не вдалося отримати відео для message ${{ github.event.inputs.message_id }}"}' \
+                ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
+            fi
             exit 1
           fi
 
@@ -60,9 +66,11 @@ jobs:
             echo "⚠️ Розмір невідомий — пробуємо завантажити..."
           elif [ "$FILESIZE" -gt "$MAX_SIZE_BYTES" ]; then
             echo "❌ Відео занадто велике: більше 180 MB"
-            curl -X POST -H "Content-Type: application/json" \
-              -d '{"content": "❌ Відео занадто велике (макс. 180 МБ)"}' \
-              ${{ secrets.DISCORD_WEBHOOK }}
+            if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ]; then
+              curl -X POST -H "Content-Type: application/json" \
+                -d '{"content": "❌ Відео занадто велике (макс. 180 МБ) для message ${{ github.event.inputs.message_id }}"}' \
+                ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
+            fi
             exit 1
           fi
 
@@ -87,15 +95,24 @@ jobs:
             echo "link=$OUTPUT_LINK" >> $GITHUB_OUTPUT
           else
             echo "❌ Помилка вивантаження: $OUTPUT_LINK"
-            curl -X POST -H "Content-Type: application/json" \
-              -d '{"content": "❌ Не вдалося вивантажити на Catbox"}' \
-              ${{ secrets.DISCORD_WEBHOOK }}
+            if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ]; then
+              curl -X POST -H "Content-Type: application/json" \
+                -d '{"content": "❌ Не вдалося вивантажити на Catbox для message ${{ github.event.inputs.message_id }}"}' \
+                ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
+            fi
             exit 1
           fi
 
-      - name: Send success to Discord
+      - name: Send result to results channel
         if: success()
         run: |
-          curl -X POST -H "Content-Type: application/json" \
-          -d '{"content": "🎞️ ${{ steps.catbox.outputs.link }}"}' \
-          ${{ secrets.DISCORD_WEBHOOK }}
+          MESSAGE_ID="${{ github.event.inputs.message_id }}"
+          if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ] && [ "$MESSAGE_ID" != "" ]; then
+            curl -X POST -H "Content-Type: application/json" \
+            -d '{"content": "🔗 Result for message '"$MESSAGE_ID"': ${{ steps.catbox.outputs.link }}"}' \
+            ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
+          elif [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ]; then
+            curl -X POST -H "Content-Type: application/json" \
+            -d '{"content": "🎞️ ${{ steps.catbox.outputs.link }}"}' \
+            ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
+          fi
