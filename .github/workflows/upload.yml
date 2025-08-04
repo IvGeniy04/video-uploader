@@ -1,28 +1,22 @@
-name: Video Downloader Bot
+name: Upload Video to Catbox
 
 on:
   workflow_dispatch:
     inputs:
       url:
-        description: "Video URL"
+        description: 'Video URL'
         required: true
         type: string
       message_id:
-        description: "Discord message ID"
+        description: 'Discord Message ID'
         required: false
         type: string
 
 jobs:
-  download:
+  upload:
     runs-on: ubuntu-latest
 
-    env:
-      DISCORD_RESULTS_WEBHOOK: ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
-
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -35,27 +29,65 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install yt-dlp requests python-dotenv
+          pip install git+https://github.com/yt-dlp/yt-dlp.git
+          pip install requests
 
-      - name: Create working directory
-        run: mkdir -p downloads
-
-      - name: Warm up Facebook (if needed)
-        if: contains(github.event.inputs.url, 'facebook.com') || contains(github.event.inputs.url, 'fb.watch')
-        run: |
-          curl -s -L -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
-            --max-time 30 "${{ github.event.inputs.url }}" > /dev/null 2>&1 || true
+      - name: Warm up Facebook
+        if: contains(inputs.url, 'facebook.com') || contains(inputs.url, 'fb.watch')
+        run: >
+          curl -s -L -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+          --max-time 30 "${{ inputs.url }}" > /dev/null 2>&1 || true
           sleep 3
 
-      - name: Download video
+      - name: Check content type
+        id: content_check
+        run: >
+          INFO=$(yt-dlp --dump-json --simulate "${{ inputs.url }}" 2>/dev/null) || echo "";
+          if [ -z "$INFO" ]; then
+            echo "type=error" >> $GITHUB_OUTPUT
+            exit 0
+          fi;
+          HAS_VIDEO=$(echo "$INFO" | python3 -c "
+          import sys, json;
+          try:
+            info = json.load(sys.stdin);
+            formats = info.get('formats', []);
+            if any(f.get('vcodec', 'none') != 'none' for f in formats):
+              print('video');
+            elif any(f.get('acodec', 'none') != 'none' for f in formats):
+              print('audio');
+            elif info.get('thumbnail'):
+              print('image');
+            else:
+              print('text');
+          except:
+            print('unknown')
+          ");
+          echo "type=$HAS_VIDEO" >> $GITHUB_OUTPUT
+
+      - name: Handle non-video content
+        if: steps.content_check.outputs.type != 'video'
+        run: >
+          TYPE="${{ steps.content_check.outputs.type }}";
+          MSG_ID="${{ inputs.message_id }}";
+          WEBHOOK="${{ secrets.DISCORD_RESULTS_WEBHOOK }}";
+          case "$TYPE" in
+            "image") CONTENT="🖼️ Картинка" ;;
+            "audio") CONTENT="🎵 Аудіо" ;;
+            "text") CONTENT="📝 Текстовий пост" ;;
+            "error") CONTENT="❌ Не вдалося отримати контент" ;;
+            *) CONTENT="📄 Невідомий тип контенту" ;;
+          esac;
+          if [ -n "$WEBHOOK" ] && [ -n "$MSG_ID" ]; then
+            curl -X POST -H "Content-Type: application/json"
+            -d "{\"content\": \"$CONTENT для message $MSG_ID\"}"
+            "$WEBHOOK";
+          fi
+
+      - name: Download and upload video
         id: download
         run: |
-          set -e
-          URL="${{ github.event.inputs.url }}"
-          OUTPUT="downloads/video.mp4"
-
-          yt-dlp \
+          LINK=$(yt-dlp \
             --retries 3 \
             --fragment-retries 3 \
             --sleep-interval 2 \
@@ -64,93 +96,26 @@ jobs:
             --extractor-args "pinterest:use_webpage=True" \
             --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
             --no-check-certificate \
-            -o "$OUTPUT" "$URL" || echo "failed" > downloads/status.txt
-
-          if [ ! -f "$OUTPUT" ]; then
-            echo "error=1" >> $GITHUB_OUTPUT
+            --output - \
+            "${{ inputs.url }}" | \
+            curl -s -H "Expect:" \
+            -F "reqtype=fileupload" \
+            -F "fileToUpload=@-;filename=video.mp4;type=video/mp4" \
+            https://catbox.moe/user/api.php)
+          if [[ "$LINK" =~ ^https:// ]]; then
+            echo "link=$LINK" >> $GITHUB_OUTPUT
           else
-            SIZE=$(du -m "$OUTPUT" | cut -f1)
-            echo "size=$SIZE" >> $GITHUB_OUTPUT
+            exit 1
           fi
 
-      - name: Check file size or error
-        id: check
-        run: |
-          if [ -f downloads/status.txt ]; then
-            echo "type=error" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          SIZE=${{ steps.download.outputs.size }}
-          if [ "$SIZE" -gt 190 ]; then
-            echo "type=too_large" >> $GITHUB_OUTPUT
-          else
-            echo "type=video" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Upload to catbox (if size ok)
-        if: steps.check.outputs.type == 'video'
-        id: upload
-        run: |
-          RESPONSE=$(curl -s -F "reqtype=fileupload" -F "fileToUpload=@downloads/video.mp4" https://catbox.moe/user/api.php)
-          echo "link=$RESPONSE" >> $GITHUB_OUTPUT
-
-      - name: Send Discord notification (success)
-        if: steps.check.outputs.type == 'video'
-        run: |
-          MSG_ID="${{ github.event.inputs.message_id }}"
-          LINK="${{ steps.upload.outputs.link }}"
-          WEBHOOK="${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
-
-          if [ -n "$WEBHOOK" ]; then
-            if [ -n "$MSG_ID" ]; then
-              curl -X POST -H "Content-Type: application/json" \
-                -d "{\"content\": \"🎞️ ${LINK} для message $MSG_ID\"}" \
-                "$WEBHOOK"
-            else
-              curl -X POST -H "Content-Type: application/json" \
-                -d "{\"content\": \"🎞️ ${LINK}\"}" \
-                "$WEBHOOK"
-            fi
-          fi
-
-      - name: Handle non-video content or errors
-        if: steps.check.outputs.type != 'video'
-        run: |
-          TYPE="${{ steps.check.outputs.type }}"
-          MSG_ID="${{ github.event.inputs.message_id }}"
-          WEBHOOK="${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
-          CONTENT=""
-
-          case "$TYPE" in
-            "too_large")
-              CONTENT="❌ Відео занадто велике (макс. 190 МБ)"
-              ;;
-            "image")
-              CONTENT="🖼️ Картинка"
-              ;;
-            "audio")
-              CONTENT="🎵 Аудіо"
-              ;;
-            "text")
-              CONTENT="📝 Текстовий пост"
-              ;;
-            "error")
-              CONTENT="❌ Помилка обробки відео"
-              ;;
-            *)
-              CONTENT="📄 Невідомий контент"
-              ;;
-          esac
-
-          if [ -n "$WEBHOOK" ]; then
-            if [ -n "$MSG_ID" ]; then
-              curl -X POST -H "Content-Type: application/json" \
-                -d "{\"content\": \"$CONTENT для message $MSG_ID\"}" \
-                "$WEBHOOK"
-            else
-              curl -X POST -H "Content-Type: application/json" \
-                -d "{\"content\": \"$CONTENT\"}" \
-                "$WEBHOOK"
-            fi
+      - name: Send result to Discord
+        if: success()
+        run: >
+          LINK="${{ steps.download.outputs.link }}";
+          MSG_ID="${{ inputs.message_id }}";
+          WEBHOOK="${{ secrets.DISCORD_RESULTS_WEBHOOK }}";
+          if [ -n "$LINK" ] && [ -n "$WEBHOOK" ] && [ -n "$MSG_ID" ]; then
+            curl -X POST -H "Content-Type: application/json"
+            -d "{\"content\": \"✅ [Готово!]($LINK) для message $MSG_ID\"}"
+            "$WEBHOOK";
           fi
