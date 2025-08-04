@@ -41,47 +41,62 @@ jobs:
 
       - name: Check content type
         id: content_check
-        run: >
-          INFO=$(yt-dlp --dump-json --simulate "${{ inputs.url }}" 2>/dev/null) || echo "";
+        run: |
+          INFO=$(yt-dlp --dump-json --simulate "${{ inputs.url }}" 2>/dev/null) || echo ""
+          
           if [ -z "$INFO" ]; then
             echo "type=error" >> $GITHUB_OUTPUT
             exit 0
-          fi;
-          HAS_VIDEO=$(echo "$INFO" | python3 -c "
-          import sys, json;
-          try:
-            info = json.load(sys.stdin);
-            formats = info.get('formats', []);
-            if any(f.get('vcodec', 'none') != 'none' for f in formats):
-              print('video');
-            elif any(f.get('acodec', 'none') != 'none' for f in formats):
-              print('audio');
-            elif info.get('thumbnail'):
-              print('image');
-            else:
-              print('text');
-          except:
-            print('unknown')
-          ");
+          fi
+          
+          HAS_VIDEO=$(python3 << EOF
+import sys, json
+try:
+    info = json.loads('''$INFO''')
+    formats = info.get('formats', [])
+    if any(f.get('vcodec', 'none') != 'none' for f in formats):
+        print('video')
+    elif any(f.get('acodec', 'none') != 'none' for f in formats):
+        print('audio')
+    elif info.get('thumbnail'):
+        print('image')
+    else:
+        print('text')
+except Exception:
+    print('unknown')
+EOF
+)
           echo "type=$HAS_VIDEO" >> $GITHUB_OUTPUT
 
       - name: Handle non-video content
         if: steps.content_check.outputs.type != 'video'
-        run: >
-          TYPE="${{ steps.content_check.outputs.type }}";
-          MSG_ID="${{ inputs.message_id }}";
-          WEBHOOK="${{ secrets.DISCORD_RESULTS_WEBHOOK }}";
+        run: |
+          TYPE="${{ steps.content_check.outputs.type }}"
+          MSG_ID="${{ inputs.message_id }}"
+          WEBHOOK="${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
+          
           case "$TYPE" in
-            "image") CONTENT="🖼️ Картинка" ;;
-            "audio") CONTENT="🎵 Аудіо" ;;
-            "text") CONTENT="📝 Текстовий пост" ;;
-            "error") CONTENT="❌ Не вдалося отримати контент" ;;
-            *) CONTENT="📄 Невідомий тип контенту" ;;
-          esac;
+            "image")
+              CONTENT="🖼️ Картинка"
+              ;;
+            "audio")
+              CONTENT="🎵 Аудіо"
+              ;;
+            "text")
+              CONTENT="📝 Текстовий пост"
+              ;;
+            "error")
+              CONTENT="❌ Не вдалося отримати контент"
+              ;;
+            *)
+              CONTENT="📄 Невідомий тип контенту"
+              ;;
+          esac
+          
           if [ -n "$WEBHOOK" ] && [ -n "$MSG_ID" ]; then
-            curl -X POST -H "Content-Type: application/json"
-            -d "{\"content\": \"$CONTENT для message $MSG_ID\"}"
-            "$WEBHOOK";
+            curl -X POST -H "Content-Type: application/json" \
+              -d "{\"content\": \"$CONTENT для message $MSG_ID\"}" \
+              "$WEBHOOK"
           fi
 
       - name: Download and upload video
@@ -102,6 +117,7 @@ jobs:
             -F "reqtype=fileupload" \
             -F "fileToUpload=@-;filename=video.mp4;type=video/mp4" \
             https://catbox.moe/user/api.php)
+          
           if [[ "$LINK" =~ ^https:// ]]; then
             echo "link=$LINK" >> $GITHUB_OUTPUT
           else
@@ -110,12 +126,13 @@ jobs:
 
       - name: Send result to Discord
         if: success()
-        run: >
-          LINK="${{ steps.download.outputs.link }}";
-          MSG_ID="${{ inputs.message_id }}";
-          WEBHOOK="${{ secrets.DISCORD_RESULTS_WEBHOOK }}";
+        run: |
+          LINK="${{ steps.download.outputs.link }}"
+          MSG_ID="${{ inputs.message_id }}"
+          WEBHOOK="${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
+          
           if [ -n "$LINK" ] && [ -n "$WEBHOOK" ] && [ -n "$MSG_ID" ]; then
-            curl -X POST -H "Content-Type: application/json"
-            -d "{\"content\": \"✅ [Готово!]($LINK) для message $MSG_ID\"}"
-            "$WEBHOOK";
+            curl -X POST -H "Content-Type: application/json" \
+              -d "{\"content\": \"✅ [Готово!]($LINK) для message $MSG_ID\"}" \
+              "$WEBHOOK"
           fi
