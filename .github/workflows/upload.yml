@@ -15,16 +15,16 @@ on:
 jobs:
   upload:
     runs-on: ubuntu-latest
+    container: jrottenberg/ffmpeg:ubuntu
     steps:
-      - name: Install yt-dlp with embedded ffmpeg
-        run: |
-          curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o yt-dlp
-          chmod +x yt-dlp
-          sudo mv yt-dlp /usr/local/bin/
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
 
-      - name: Install requests
+      - name: Install dependencies
         run: |
-          pip install requests
+          pip install yt-dlp requests
 
       - name: Warm up Facebook
         if: contains(inputs.url, 'facebook.com') || contains(inputs.url, 'fb.watch')
@@ -33,72 +33,96 @@ jobs:
             --max-time 30 "${{ inputs.url }}" > /dev/null 2>&1 || true
           sleep 3
 
-      - name: Download video (Attempt 1)
-        id: download
+      - name: Check content type
+        id: content_check
         run: |
+          INFO=$(yt-dlp --dump-json --no-check-certificate "${{ inputs.url }}" 2>/dev/null)
+          
+          if [ -z "$INFO" ]; then
+            echo "type=error" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          HAS_VIDEO=$(echo "$INFO" | python3 -c "
+import sys, json
+try:
+    info = json.load(sys.stdin)
+    formats = info.get('formats', [])
+    if any(f.get('vcodec', 'none') != 'none' for f in formats):
+        print('video')
+    elif any(f.get('acodec', 'none') != 'none' for f in formats):
+        print('audio')
+    elif info.get('thumbnail'):
+        print('image')
+    else:
+        print('text')
+except:
+    print('unknown')
+")
+          
+          echo "type=$HAS_VIDEO" >> $GITHUB_OUTPUT
+          
+          if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ] && [ -n "${{ inputs.message_id }}" ]; then
+            case "$HAS_VIDEO" in
+              "video")
+                EMOJI="📺"
+                DESC="відео"
+                ;;
+              "image")
+                EMOJI="🖼️"
+                DESC="картинка"
+                ;;
+              "audio")
+                EMOJI="🎵"
+                DESC="аудіо"
+                ;;
+              "text")
+                EMOJI="📝"
+                DESC="текст"
+                ;;
+              *)
+                EMOJI="❓"
+                DESC="невідомий тип"
+                ;;
+            esac
+            curl -X POST -H "Content-Type: application/json" \
+              -d "{\"content\": \"$EMOJI Визначено: $DESC для message ${{ inputs.message_id }}\"}" \
+              "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
+          fi
+
+      - name: Skip non-video
+        if: steps.content_check.outputs.type != 'video'
+        run: |
+          echo "🚫 Не відео — завершення"
+          exit 0
+
+      - name: Download and upload
+        id: catbox
+        run: |
+          # Завантажуємо і зливаємо відео+аудіо за допомогою ffmpeg
           yt-dlp \
             --format "bestvideo+bestaudio" \
             --merge-output-format mp4 \
-            --retries 3 \
-            --fragment-retries 3 \
-            --sleep-interval 2 \
             --no-check-certificate \
-            --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
-            --extractor-args "pinterest:use_webpage=True" \
             --output "video.mp4" \
             "${{ inputs.url }}" && \
-          echo "status=success" >> $GITHUB_OUTPUT || \
-          echo "status=failed" >> $GITHUB_OUTPUT
-
-      - name: Upload to Catbox (Attempt 1)
-        if: steps.download.outputs.status == 'success'
-        id: upload
-        run: |
           LINK=$(curl -s -H "Expect:" \
             -F "reqtype=fileupload" \
             -F "fileToUpload=@video.mp4" \
-            https://catbox.moe/user/api.php)
-          
-          if [[ "$LINK" =~ ^https:// ]]; then
-            echo "link=$LINK" >> $GITHUB_OUTPUT
-            # Надсилаємо посилання
-            curl -X POST -H "Content-Type: application/json" \
-              -d "{\"content\": \"🔗 $LINK для message ${{ inputs.message_id }}\"}" \
-              "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
-            # Успіх
-            curl -X POST -H "Content-Type: application/json" \
-              -d "{\"content\": \"✅ для message ${{ inputs.message_id }}\"}" \
-              "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
-          else
-            exit 1
-          fi
-
-      - name: Retry (Attempt 2)
-        if: failure()
-        run: |
-          yt-dlp \
-            --format "bestvideo+bestaudio" \
-            --merge-output-format mp4 \
-            --retries 3 \
-            --fragment-retries 3 \
-            --sleep-interval 2 \
-            --no-check-certificate \
-            --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
-            --extractor-args "pinterest:use_webpage=True" \
-            --output "video.mp4" \
-            "${{ inputs.url }}" && \
-          LINK=$(curl -s -H "Expect:" -F "reqtype=fileupload" -F "fileToUpload=@video.mp4" https://catbox.moe/user/api.php) && \
+            https://catbox.moe/user/api.php) && \
           [[ "$LINK" =~ ^https:// ]] && \
-          echo "link=$LINK" >> $GITHUB_OUTPUT && \
-          curl -X POST -H "Content-Type: application/json" \
-            -d "{\"content\": \"🔗 $LINK для message ${{ inputs.message_id }}\"}" \
-            "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" && \
-          curl -X POST -H "Content-Type: application/json" \
-            -d "{\"content\": \"✅ для message ${{ inputs.message_id }}\"}" \
-            "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" || \
-          (curl -X POST -H "Content-Type: application/json" \
-            -d "{\"content\": \"❌ для message ${{ inputs.message_id }}\"}" \
-            "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"; exit 1)
+          echo "link=$LINK" >> $GITHUB_OUTPUT || \
+          exit 1
+
+      - name: Send result to results channel
+        if: success()
+        run: |
+          MESSAGE_ID="${{ inputs.message_id }}"
+          if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ] && [ -n "$MESSAGE_ID" ]; then
+            curl -X POST -H "Content-Type: application/json" \
+            -d "{\"content\": \"🔗 Result for message $MESSAGE_ID: ${{ steps.catbox.outputs.link }}\"}" \
+            "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
+          fi
 
       - name: Clean up
         if: always()
