@@ -33,28 +33,37 @@ jobs:
             --max-time 30 "${{ inputs.url }}" > /dev/null 2>&1 || true
           sleep 3
 
-      - name: Download and upload (Attempt 1)
-        id: process
+      - name: Download video (Attempt 1)
+        id: download
         run: |
-          LINK=$(yt-dlp \
+          yt-dlp \
+            --format "bestvideo+bestaudio" \
+            --merge-output-format mp4 \
             --retries 2 \
             --fragment-retries 2 \
             --sleep-interval 2 \
             --no-check-certificate \
-            --output - \
-            "${{ inputs.url }}" | \
-            curl -s -H "Expect:" \
-            -F "reqtype=fileupload" \
-            -F "fileToUpload=@-;filename=video.mp4;type=video/mp4" \
-            https://catbox.moe/user/api.php)
+            --output "video.mp4" \
+            "${{ inputs.url }}" && \
+          echo "status=success" >> $GITHUB_OUTPUT || \
+          echo "status=failed" >> $GITHUB_OUTPUT
 
+      - name: Upload to Catbox (Attempt 1)
+        if: steps.download.outputs.status == 'success'
+        id: upload
+        run: |
+          LINK=$(curl -s -H "Expect:" \
+            -F "reqtype=fileupload" \
+            -F "fileToUpload=@video.mp4" \
+            https://catbox.moe/user/api.php)
+          
           if [[ "$LINK" =~ ^https:// ]]; then
             echo "link=$LINK" >> $GITHUB_OUTPUT
             # Надсилаємо посилання
             curl -X POST -H "Content-Type: application/json" \
               -d "{\"content\": \"🔗 $LINK для message ${{ inputs.message_id }}\"}" \
               "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
-            # Статус успіху
+            # Успіх
             curl -X POST -H "Content-Type: application/json" \
               -d "{\"content\": \"✅ для message ${{ inputs.message_id }}\"}" \
               "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
@@ -62,32 +71,32 @@ jobs:
             exit 1
           fi
 
-      - name: Retry upload (Attempt 2)
+      - name: Retry (Attempt 2)
         if: failure()
         run: |
-          LINK=$(yt-dlp \
+          yt-dlp \
+            --format "bestvideo+bestaudio" \
+            --merge-output-format mp4 \
             --retries 2 \
             --fragment-retries 2 \
             --sleep-interval 2 \
             --no-check-certificate \
-            --output - \
-            "${{ inputs.url }}" | \
-            curl -s -H "Expect:" \
-            -F "reqtype=fileupload" \
-            -F "fileToUpload=@-;filename=video.mp4;type=video/mp4" \
-            https://catbox.moe/user/api.php)
+            --output "video.mp4" \
+            "${{ inputs.url }}" && \
+          LINK=$(curl -s -H "Expect:" -F "reqtype=fileupload" -F "fileToUpload=@video.mp4" https://catbox.moe/user/api.php) && \
+          [[ "$LINK" =~ ^https:// ]] && \
+          echo "link=$LINK" >> $GITHUB_OUTPUT && \
+          curl -X POST -H "Content-Type: application/json" \
+            -d "{\"content\": \"🔗 $LINK для message ${{ inputs.message_id }}\"}" \
+            "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" && \
+          curl -X POST -H "Content-Type: application/json" \
+            -d "{\"content\": \"✅ для message ${{ inputs.message_id }}\"}" \
+            "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" || \
+          (curl -X POST -H "Content-Type: application/json" \
+            -d "{\"content\": \"❌ для message ${{ inputs.message_id }}\"}" \
+            "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"; exit 1)
 
-          if [[ "$LINK" =~ ^https:// ]]; then
-            echo "link=$LINK" >> $GITHUB_OUTPUT
-            curl -X POST -H "Content-Type: application/json" \
-              -d "{\"content\": \"🔗 $LINK для message ${{ inputs.message_id }}\"}" \
-              "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
-            curl -X POST -H "Content-Type: application/json" \
-              -d "{\"content\": \"✅ для message ${{ inputs.message_id }}\"}" \
-              "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
-          else
-            curl -X POST -H "Content-Type: application/json" \
-              -d "{\"content\": \"❌ для message ${{ inputs.message_id }}\"}" \
-              "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
-            exit 1
-          fi
+      - name: Clean up
+        if: always()
+        run: |
+          rm -f video.mp4
