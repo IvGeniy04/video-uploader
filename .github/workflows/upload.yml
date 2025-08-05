@@ -16,181 +16,79 @@ jobs:
   upload:
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
-      - name: Install ffmpeg
+      - name: Install yt-dlp with embedded ffmpeg
         run: |
-          sudo apt update
-          sudo apt install -y ffmpeg
+          curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o yt-dlp
+          chmod +x yt-dlp
+          sudo mv yt-dlp /usr/local/bin/
 
-      - name: Install dependencies
+      - name: Install requests
         run: |
-          pip install git+https://github.com/yt-dlp/yt-dlp.git
           pip install requests
 
-      - name: Warm up Facebook link
+      - name: Warm up Facebook
         if: contains(inputs.url, 'facebook.com') || contains(inputs.url, 'fb.watch')
         run: |
           curl -s -L -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
             --max-time 30 "${{ inputs.url }}" > /dev/null 2>&1 || true
           sleep 3
 
-      - name: Check content type
-        id: content_check
+      - name: Download and upload (Attempt 1)
+        id: process
         run: |
-          echo "🔍 Аналіз контенту: ${{ inputs.url }}"
-          INFO=$(yt-dlp --dump-json --no-check-certificate "${{ inputs.url }}" 2>/dev/null)
-          
-          if [ -z "$INFO" ]; then
-            echo "type=error" >> $GITHUB_OUTPUT
-            exit 1
-          fi
-          
-          HAS_VIDEO=$(echo "$INFO" | python3 -c "import sys, json; info = json.load(sys.stdin); formats = info.get('formats', []); print('video' if any(f.get('vcodec', 'none') != 'none' for f in formats) else 'audio' if any(f.get('acodec', 'none') != 'none' for f in formats) else 'image' if info.get('thumbnail') else 'text')")
-          
-          echo "type=$HAS_VIDEO" >> $GITHUB_OUTPUT
-          
-          if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ] && [ -n "${{ inputs.message_id }}" ]; then
-            case "$HAS_VIDEO" in
-              "video")
-                EMOJI="📺"
-                DESC="відео"
-                ;;
-              "image")
-                EMOJI="🖼️"
-                DESC="картинка"
-                ;;
-              "audio")
-                EMOJI="🎵"
-                DESC="аудіо"
-                ;;
-              "text")
-                EMOJI="📝"
-                DESC="текст"
-                ;;
-              *)
-                EMOJI="❓"
-                DESC="невідомий тип"
-                ;;
-            esac
-            curl -X POST -H "Content-Type: application/json" \
-              -d "{\"content\": \"$EMOJI Визначено: $DESC для message ${{ inputs.message_id }}\"}" \
-              "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
-          fi
-
-      - name: Skip non-video
-        if: steps.content_check.outputs.type != 'video'
-        run: |
-          echo "🚫 Не відео — завершення"
-          exit 0
-
-      - name: Download video (Attempt 1)
-        if: steps.content_check.outputs.type == 'video'
-        id: download_attempt_1
-        run: |
-          if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ] && [ -n "${{ inputs.message_id }}" ]; then
-            curl -X POST -H "Content-Type: application/json" \
-              -d "{\"content\": \"📥1 для message ${{ inputs.message_id }}\"}" \
-              "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
-          fi
-          
-          yt-dlp \
-            --output "video.mp4" \
-            --merge-output-format mp4 \
+          # Завантажуємо і вивантажуємо одразу
+          LINK=$(yt-dlp \
+            --retries 2 \
+            --fragment-retries 2 \
+            --sleep-interval 2 \
             --no-check-certificate \
-            "${{ inputs.url }}" && \
-          echo "status=success" >> $GITHUB_OUTPUT || \
-          echo "status=failed" >> $GITHUB_OUTPUT
-
-      - name: Download video (Attempt 2)
-        if: steps.download_attempt_1.outputs.status == 'failed' && steps.content_check.outputs.type == 'video'
-        id: download_attempt_2
-        run: |
-          if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ] && [ -n "${{ inputs.message_id }}" ]; then
-            curl -X POST -H "Content-Type: application/json" \
-              -d "{\"content\": \"📥2 для message ${{ inputs.message_id }}\"}" \
-              "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
-          fi
-          
-          yt-dlp \
-            --output "video.mp4" \
-            --merge-output-format mp4 \
-            --no-check-certificate \
-            "${{ inputs.url }}" && \
-          echo "status=success" >> $GITHUB_OUTPUT || \
-          echo "status=failed" >> $GITHUB_OUTPUT
-
-      - name: Upload to Catbox (Attempt 1)
-        if: steps.download_attempt_1.outputs.status == 'success' || steps.download_attempt_2.outputs.status == 'success'
-        id: upload_attempt_1
-        run: |
-          if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ] && [ -n "${{ inputs.message_id }}" ]; then
-            curl -X POST -H "Content-Type: application/json" \
-              -d "{\"content\": \"📤1 для message ${{ inputs.message_id }}\"}" \
-              "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
-          fi
-          
-          LINK=$(curl -s -H "Expect:" \
+            --output - \
+            "${{ inputs.url }}" | \
+            curl -s -H "Expect:" \
             -F "reqtype=fileupload" \
-            -F "fileToUpload=@video.mp4" \
+            -F "fileToUpload=@-;filename=video.mp4;type=video/mp4" \
             https://catbox.moe/user/api.php)
-          
+
           if [[ "$LINK" =~ ^https:// ]]; then
             echo "link=$LINK" >> $GITHUB_OUTPUT
-            # Надсилаємо посилання у канал результатів
+            # Надсилаємо посилання
             curl -X POST -H "Content-Type: application/json" \
               -d "{\"content\": \"🔗 $LINK для message ${{ inputs.message_id }}\"}" \
               "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
-          else
-            exit 1
-          fi
-
-      - name: Upload to Catbox (Attempt 2)
-        if: failure() && (steps.download_attempt_1.outputs.status == 'success' || steps.download_attempt_2.outputs.status == 'success')
-        id: upload_attempt_2
-        run: |
-          if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ] && [ -n "${{ inputs.message_id }}" ]; then
-            curl -X POST -H "Content-Type: application/json" \
-              -d "{\"content\": \"📤2 для message ${{ inputs.message_id }}\"}" \
-              "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
-          fi
-          
-          LINK=$(curl -s -H "Expect:" \
-            -F "reqtype=fileupload" \
-            -F "fileToUpload=@video.mp4" \
-            https://catbox.moe/user/api.php)
-          
-          if [[ "$LINK" =~ ^https:// ]]; then
-            echo "link=$LINK" >> $GITHUB_OUTPUT
-            curl -X POST -H "Content-Type: application/json" \
-              -d "{\"content\": \"🔗 $LINK для message ${{ inputs.message_id }}\"}" \
-              "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
-          else
-            exit 1
-          fi
-
-      - name: Send success status
-        if: success()
-        run: |
-          if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ] && [ -n "${{ inputs.message_id }}" ]; then
+            # Статус успіху
             curl -X POST -H "Content-Type: application/json" \
               -d "{\"content\": \"✅ для message ${{ inputs.message_id }}\"}" \
               "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
+          else
+            exit 1
           fi
 
-      - name: Send error status
+      - name: Retry upload (Attempt 2)
         if: failure()
         run: |
-          if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ] && [ -n "${{ inputs.message_id }}" ]; then
+          LINK=$(yt-dlp \
+            --retries 2 \
+            --fragment-retries 2 \
+            --sleep-interval 2 \
+            --no-check-certificate \
+            --output - \
+            "${{ inputs.url }}" | \
+            curl -s -H "Expect:" \
+            -F "reqtype=fileupload" \
+            -F "fileToUpload=@-;filename=video.mp4;type=video/mp4" \
+            https://catbox.moe/user/api.php)
+
+          if [[ "$LINK" =~ ^https:// ]]; then
+            echo "link=$LINK" >> $GITHUB_OUTPUT
+            curl -X POST -H "Content-Type: application/json" \
+              -d "{\"content\": \"🔗 $LINK для message ${{ inputs.message_id }}\"}" \
+              "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
+            curl -X POST -H "Content-Type: application/json" \
+              -d "{\"content\": \"✅ для message ${{ inputs.message_id }}\"}" \
+              "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
+          else
             curl -X POST -H "Content-Type: application/json" \
               -d "{\"content\": \"❌ для message ${{ inputs.message_id }}\"}" \
               "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
+            exit 1
           fi
-
-      - name: Clean up
-        if: always()
-        run: |
-          rm -f video.mp4
