@@ -39,10 +39,12 @@ jobs:
           yt-dlp \
             --format "bestvideo+bestaudio" \
             --merge-output-format mp4 \
-            --retries 2 \
-            --fragment-retries 2 \
+            --retries 3 \
+            --fragment-retries 3 \
             --sleep-interval 2 \
             --no-check-certificate \
+            --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
+            --extractor-args "pinterest:use_webpage=True" \
             --output "video.mp4" \
             "${{ inputs.url }}" && \
           echo "status=success" >> $GITHUB_OUTPUT || \
@@ -77,10 +79,12 @@ jobs:
           yt-dlp \
             --format "bestvideo+bestaudio" \
             --merge-output-format mp4 \
-            --retries 2 \
-            --fragment-retries 2 \
+            --retries 3 \
+            --fragment-retries 3 \
             --sleep-interval 2 \
             --no-check-certificate \
+            --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
+            --extractor-args "pinterest:use_webpage=True" \
             --output "video.mp4" \
             "${{ inputs.url }}" && \
           LINK=$(curl -s -H "Expect:" -F "reqtype=fileupload" -F "fileToUpload=@video.mp4" https://catbox.moe/user/api.php) && \
