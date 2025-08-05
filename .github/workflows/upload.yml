@@ -107,12 +107,8 @@ jobs:
         if: success()
         run: |
           MESSAGE_ID="${{ github.event.inputs.message_id }}"
-          if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ] && [ "$MESSAGE_ID" != "" ]; then
+          if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ]; then
             curl -X POST -H "Content-Type: application/json" \
             -d '{"content": "🔗 Result for message '"$MESSAGE_ID"': ${{ steps.catbox.outputs.link }}"}' \
-            ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
-          elif [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ]; then
-            curl -X POST -H "Content-Type: application/json" \
-            -d '{"content": "🎞️ ${{ steps.catbox.outputs.link }}"}' \
             ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
           fi
