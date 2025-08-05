@@ -36,7 +36,6 @@ jobs:
       - name: Download and upload (Attempt 1)
         id: process
         run: |
-          # Завантажуємо і вивантажуємо одразу
           LINK=$(yt-dlp \
             --retries 2 \
             --fragment-retries 2 \
