@@ -15,16 +15,15 @@ on:
 jobs:
   upload:
     runs-on: ubuntu-latest
-    container: jrottenberg/ffmpeg:ubuntu
     steps:
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
-      - name: Install dependencies
+      - name: Install yt-dlp with embedded ffmpeg
         run: |
-          pip install git+https://github.com/yt-dlp/yt-dlp.git
+          curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o yt-dlp
+          chmod +x yt-dlp
+          sudo mv yt-dlp /usr/local/bin/
+
+      - name: Install requests
+        run: |
           pip install requests
 
       - name: Warm up Facebook
@@ -38,7 +37,7 @@ jobs:
         id: catbox
         run: |
           # Очищаємо URL
-          VIDEO_URL="${{ github.event.inputs.url }}"
+          VIDEO_URL="${{ inputs.url }}"
           VIDEO_URL=$(echo "$VIDEO_URL" | xargs)
           MAX_SIZE_BYTES=$((180 * 1024 * 1024))  # 180 MB
 
@@ -57,7 +56,7 @@ jobs:
             echo "❌ Не вдалося отримати інформацію про відео"
             if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ]; then
               curl -X POST -H "Content-Type: application/json" \
-                -d '{"content": "❌ Не вдалося отримати відео для message ${{ github.event.inputs.message_id }}"}' \
+                -d '{"content": "❌ Не вдалося отримати відео для message ${{ inputs.message_id }}"}' \
                 ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
             fi
             exit 1
@@ -71,7 +70,7 @@ jobs:
             echo "❌ Відео занадто велике: більше 180 MB"
             if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ]; then
               curl -X POST -H "Content-Type: application/json" \
-                -d '{"content": "❌ Відео занадто велике (макс. 180 МБ) для message ${{ github.event.inputs.message_id }}"}' \
+                -d '{"content": "❌ Відео занадто велике (макс. 180 МБ) для message ${{ inputs.message_id }}"}' \
                 ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
             fi
             exit 1
@@ -101,7 +100,7 @@ jobs:
             echo "❌ Помилка вивантаження: $OUTPUT_LINK"
             if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ]; then
               curl -X POST -H "Content-Type: application/json" \
-                -d '{"content": "❌ Не вдалося вивантажити на Catbox для message ${{ github.event.inputs.message_id }}"}' \
+                -d '{"content": "❌ Не вдалося вивантажити на Catbox для message ${{ inputs.message_id }}"}' \
                 ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
             fi
             exit 1
@@ -110,7 +109,7 @@ jobs:
       - name: Send result to results channel
         if: success()
         run: |
-          MESSAGE_ID="${{ github.event.inputs.message_id }}"
+          MESSAGE_ID="${{ inputs.message_id }}"
           if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ]; then
             curl -X POST -H "Content-Type: application/json" \
             -d '{"content": "🔗 Result for message '"$MESSAGE_ID"': ${{ steps.catbox.outputs.link }}"}' \
