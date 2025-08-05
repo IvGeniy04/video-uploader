@@ -33,60 +33,56 @@ jobs:
 
       - name: Check content type
         id: content_check
-        run: |
-          echo "🔍 Аналіз контенту: ${{ inputs.url }}"
-          INFO=$(yt-dlp --dump-json --no-check-certificate "${{ inputs.url }}" 2>/dev/null)
-          
+        run: >
+          echo "🔍 Аналіз контенту: ${{ inputs.url }}";
+          INFO=$(yt-dlp --dump-json --no-check-certificate "${{ inputs.url }}" 2>/dev/null);
           if [ -z "$INFO" ]; then
-            echo "type=error" >> $GITHUB_OUTPUT
-            exit 1
-          fi
-          
+            echo "type=error" >> $GITHUB_OUTPUT;
+            exit 1;
+          fi;
           HAS_VIDEO=$(echo "$INFO" | python3 -c "
-import sys, json
+import sys, json;
 try:
-    info = json.load(sys.stdin)
-    formats = info.get('formats', [])
-    if any(f.get('vcodec', 'none') != 'none' for f in formats):
-        print('video')
-    elif any(f.get('acodec', 'none') != 'none' for f in formats):
-        print('audio')
-    elif info.get('thumbnail'):
-        print('image')
-    else:
-        print('text')
+  info = json.load(sys.stdin);
+  formats = info.get('formats', []);
+  if any(f.get('vcodec', 'none') != 'none' for f in formats):
+    print('video');
+  elif any(f.get('acodec', 'none') != 'none' for f in formats):
+    print('audio');
+  elif info.get('thumbnail'):
+    print('image');
+  else:
+    print('text');
 except:
-    print('unknown')
-")
-          
-          echo "type=$HAS_VIDEO" >> $GITHUB_OUTPUT
-          
+  print('unknown');
+");
+          echo "type=$HAS_VIDEO" >> $GITHUB_OUTPUT;
           if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ] && [ -n "${{ inputs.message_id }}" ]; then
             case "$HAS_VIDEO" in
               "video")
-                EMOJI="📺"
-                DESC="відео"
+                EMOJI="📺";
+                DESC="відео";
                 ;;
               "image")
-                EMOJI="🖼️"
-                DESC="картинка"
+                EMOJI="🖼️";
+                DESC="картинка";
                 ;;
               "audio")
-                EMOJI="🎵"
-                DESC="аудіо"
+                EMOJI="🎵";
+                DESC="аудіо";
                 ;;
               "text")
-                EMOJI="📝"
-                DESC="текст"
+                EMOJI="📝";
+                DESC="текст";
                 ;;
               *)
-                EMOJI="❓"
-                DESC="невідомий тип"
+                EMOJI="❓";
+                DESC="невідомий тип";
                 ;;
-            esac
-            curl -X POST -H "Content-Type: application/json" \
-              -d "{\"content\": \"$EMOJI Визначено: $DESC для message ${{ inputs.message_id }}\"}" \
-              "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
+            esac;
+            curl -X POST -H "Content-Type: application/json"
+            -d "{\"content\": \"$EMOJI Визначено: $DESC для message ${{ inputs.message_id }}\"}"
+            "${{ secrets.DISCORD_RESULTS_WEBHOOK }}";
           fi
 
       - name: Skip non-video
@@ -100,9 +96,9 @@ except:
         id: download_attempt_1
         run: |
           if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ] && [ -n "${{ inputs.message_id }}" ]; then
-            curl -X POST -H "Content-Type: application/json" \
-              -d "{\"content\": \"📥1 для message ${{ inputs.message_id }}\"}" \
-              "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
+            curl -X POST -H "Content-Type: application/json"
+            -d "{\"content\": \"📥1 для message ${{ inputs.message_id }}\"}"
+            "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
           fi
           
           yt-dlp \
@@ -118,9 +114,9 @@ except:
         id: download_attempt_2
         run: |
           if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ] && [ -n "${{ inputs.message_id }}" ]; then
-            curl -X POST -H "Content-Type: application/json" \
-              -d "{\"content\": \"📥2 для message ${{ inputs.message_id }}\"}" \
-              "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
+            curl -X POST -H "Content-Type: application/json"
+            -d "{\"content\": \"📥2 для message ${{ inputs.message_id }}\"}"
+            "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
           fi
           
           yt-dlp \
@@ -136,9 +132,9 @@ except:
         id: upload_attempt_1
         run: |
           if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ] && [ -n "${{ inputs.message_id }}" ]; then
-            curl -X POST -H "Content-Type: application/json" \
-              -d "{\"content\": \"📤1 для message ${{ inputs.message_id }}\"}" \
-              "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
+            curl -X POST -H "Content-Type: application/json"
+            -d "{\"content\": \"📤1 для message ${{ inputs.message_id }}\"}"
+            "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
           fi
           
           LINK=$(curl -s -H "Expect:" \
@@ -157,9 +153,9 @@ except:
         id: upload_attempt_2
         run: |
           if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ] && [ -n "${{ inputs.message_id }}" ]; then
-            curl -X POST -H "Content-Type: application/json" \
-              -d "{\"content\": \"📤2 для message ${{ inputs.message_id }}\"}" \
-              "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
+            curl -X POST -H "Content-Type: application/json"
+            -d "{\"content\": \"📤2 для message ${{ inputs.message_id }}\"}"
+            "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
           fi
           
           LINK=$(curl -s -H "Expect:" \
@@ -177,18 +173,18 @@ except:
         if: success()
         run: |
           if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ] && [ -n "${{ inputs.message_id }}" ]; then
-            curl -X POST -H "Content-Type: application/json" \
-              -d "{\"content\": \"✅ для message ${{ inputs.message_id }}\"}" \
-              "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
+            curl -X POST -H "Content-Type: application/json"
+            -d "{\"content\": \"✅ для message ${{ inputs.message_id }}\"}"
+            "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
           fi
 
       - name: Send error status
         if: failure()
         run: |
           if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ] && [ -n "${{ inputs.message_id }}" ]; then
-            curl -X POST -H "Content-Type: application/json" \
-              -d "{\"content\": \"❌ для message ${{ inputs.message_id }}\"}" \
-              "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
+            curl -X POST -H "Content-Type: application/json"
+            -d "{\"content\": \"❌ для message ${{ inputs.message_id }}\"}"
+            "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
           fi
 
       - name: Clean up
