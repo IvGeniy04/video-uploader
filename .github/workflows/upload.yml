@@ -26,24 +26,24 @@ jobs:
         run: |
           pip install requests
 
-      - name: Warm up Facebook
-        if: contains(inputs.url, 'facebook.com') || contains(inputs.url, 'fb.watch')
+      - name: Normalize Telegram URL
         run: |
-          curl -s -L -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
-            --max-time 30 "${{ inputs.url }}" > /dev/null 2>&1 || true
-          sleep 3
+          # Замінюємо t.me на telegram.org
+          echo "Original URL: ${{ inputs.url }}"
+          export NORMALIZED_URL=$(echo "${{ inputs.url }}" | sed 's|https://t\.me/|https://telegram.org/|')
+          echo "Normalized URL: $NORMALIZED_URL"
+          echo "NORMALIZED_URL=$NORMALIZED_URL" >> $GITHUB_ENV
 
       - name: Download video (best MP4 with audio)
         id: download
         run: |
           yt-dlp \
             --format "best[ext=mp4]" \
-            --allow-unplayable-formats \
-            --extractor-args "pinterest:use_webpage=True" \
-            --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
+            --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36" \
+            --referer "https://telegram.org" \
             --no-check-certificate \
             --output "video.mp4" \
-            "${{ inputs.url }}" && \
+            "$NORMALIZED_URL" && \
           echo "status=success" >> $GITHUB_OUTPUT || \
           echo "status=failed" >> $GITHUB_OUTPUT
 
