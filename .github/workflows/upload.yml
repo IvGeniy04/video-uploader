@@ -29,80 +29,37 @@ jobs:
       - name: Warm up Facebook
         if: contains(inputs.url, 'facebook.com') || contains(inputs.url, 'fb.watch')
         run: |
-          curl -s -L -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36" \
+          curl -s -L -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
             --max-time 30 "${{ inputs.url }}" > /dev/null 2>&1 || true
           sleep 3
 
-      - name: Check and upload video
-        id: catbox
+      - name: Download video with audio
+        id: download
         run: |
-          # Очищаємо URL
-          VIDEO_URL="${{ inputs.url }}"
-          VIDEO_URL=$(echo "$VIDEO_URL" | xargs)
-          MAX_SIZE_BYTES=$((180 * 1024 * 1024))  # 180 MB
-
-          echo "🔍 Отримання інформації про відео: $VIDEO_URL"
-          
-          # Отримуємо інформацію для перевірки розміру
-          INFO=$(yt-dlp \
-            --dump-json \
-            --allow-unplayable-formats \
-            --extractor-args "pinterest:use_webpage=True" \
-            --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36" \
-            --no-check-certificate \
-            "$VIDEO_URL" 2>/dev/null)
-
-          if [ -z "$INFO" ]; then
-            echo "❌ Не вдалося отримати інформацію про відео"
-            if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ]; then
-              curl -X POST -H "Content-Type: application/json" \
-                -d '{"content": "❌ Не вдалося отримати відео для message ${{ inputs.message_id }}"}' \
-                ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
-            fi
-            exit 1
-          fi
-
-          FILESIZE=$(echo "$INFO" | python3 -c "import sys, json; print(json.load(sys.stdin).get('filesize', 0))")
-
-          if [ -z "$FILESIZE" ] || [ "$FILESIZE" -eq 0 ]; then
-            echo "⚠️ Розмір невідомий — пробуємо завантажити..."
-          elif [ "$FILESIZE" -gt "$MAX_SIZE_BYTES" ]; then
-            echo "❌ Відео занадто велике: більше 180 MB"
-            if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ]; then
-              curl -X POST -H "Content-Type: application/json" \
-                -d '{"content": "❌ Відео занадто велике (макс. 180 МБ) для message ${{ inputs.message_id }}"}' \
-                ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
-            fi
-            exit 1
-          fi
-
-          echo "📥 Завантаження та вивантаження на Catbox..."
-          
-          # Завантажуємо і зливаємо відео+аудіо (важливо!)
-          OUTPUT_LINK=$(yt-dlp \
+          yt-dlp \
             --format "bestvideo+bestaudio" \
             --merge-output-format mp4 \
             --allow-unplayable-formats \
             --extractor-args "pinterest:use_webpage=True" \
-            --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36" \
+            --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
             --no-check-certificate \
-            --output - \
-            "$VIDEO_URL" | \
-            curl -H "Expect:" \
-            -F "reqtype=fileupload" \
-            -F "fileToUpload=@-;filename=video.mp4;type=video/mp4" \
-            https://catbox.moe/user/api.php)
+            --output "video.mp4" \
+            "${{ inputs.url }}" && \
+          echo "status=success" >> $GITHUB_OUTPUT || \
+          echo "status=failed" >> $GITHUB_OUTPUT
 
-          if [[ "$OUTPUT_LINK" =~ ^https:// ]]; then
-            echo "✅ Успішно: $OUTPUT_LINK"
-            echo "link=$OUTPUT_LINK" >> $GITHUB_OUTPUT
+      - name: Upload to Catbox
+        if: steps.download.outputs.status == 'success'
+        id: upload
+        run: |
+          LINK=$(curl -s -H "Expect:" \
+            -F "reqtype=fileupload" \
+            -F "fileToUpload=@video.mp4" \
+            https://catbox.moe/user/api.php)
+          
+          if [[ "$LINK" =~ ^https:// ]]; then
+            echo "link=$LINK" >> $GITHUB_OUTPUT
           else
-            echo "❌ Помилка вивантаження: $OUTPUT_LINK"
-            if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ]; then
-              curl -X POST -H "Content-Type: application/json" \
-                -d '{"content": "❌ Не вдалося вивантажити на Catbox для message ${{ inputs.message_id }}"}' \
-                ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
-            fi
             exit 1
           fi
 
@@ -112,6 +69,11 @@ jobs:
           MESSAGE_ID="${{ inputs.message_id }}"
           if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ]; then
             curl -X POST -H "Content-Type: application/json" \
-            -d '{"content": "🔗 Result for message '"$MESSAGE_ID"': ${{ steps.catbox.outputs.link }}"}' \
-            ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
+            -d "{\"content\": \"🔗 Result for message $MESSAGE_ID: ${{ steps.upload.outputs.link }}\"}" \
+            "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
           fi
+
+      - name: Clean up
+        if: always()
+        run: |
+          rm -f video.mp4
