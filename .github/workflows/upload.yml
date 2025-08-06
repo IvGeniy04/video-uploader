@@ -48,6 +48,18 @@ jobs:
           echo "status=success" >> $GITHUB_OUTPUT || \
           echo "status=failed" >> $GITHUB_OUTPUT
 
+      - name: Check if video file exists
+        if: steps.download.outputs.status == 'success'
+        run: |
+          if [ ! -f "video.mp4" ]; then
+            echo "❌ Файл video.mp4 не створено"
+            exit 1
+          fi
+          if [ ! -s "video.mp4" ]; then
+            echo "❌ Файл video.mp4 порожній"
+            exit 1
+          fi
+
       - name: Upload to Catbox
         if: steps.download.outputs.status == 'success'
         id: upload
@@ -60,6 +72,7 @@ jobs:
           if [[ "$LINK" =~ ^https:// ]]; then
             echo "link=$LINK" >> $GITHUB_OUTPUT
           else
+            echo "❌ Помилка вивантаження: $LINK"
             exit 1
           fi
 
