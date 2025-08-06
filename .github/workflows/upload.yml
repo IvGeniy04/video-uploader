@@ -78,9 +78,8 @@ jobs:
 
           echo "📥 Завантаження та вивантаження на Catbox..."
           
-          # Завантажуємо і одразу вивантажуємо (з звуком!)
+          # Завантажуємо і одразу вивантажуємо (вбудований ffmpeg)
           OUTPUT_LINK=$(yt-dlp \
-            --format "bestvideo+bestaudio" \
             --merge-output-format mp4 \
             --allow-unplayable-formats \
             --extractor-args "pinterest:use_webpage=True" \
