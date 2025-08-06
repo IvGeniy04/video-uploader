@@ -16,9 +16,8 @@ jobs:
   upload:
     runs-on: ubuntu-latest
     steps:
-      - name: Install yt-dlp with embedded ffmpeg
+      - name: Install yt-dlp
         run: |
-          # Завантажуємо yt-dlp з вбудованим ffmpeg
           curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o yt-dlp
           chmod +x yt-dlp
           sudo mv yt-dlp /usr/local/bin/
@@ -34,13 +33,11 @@ jobs:
             --max-time 30 "${{ inputs.url }}" > /dev/null 2>&1 || true
           sleep 3
 
-      - name: Download video with audio
+      - name: Download video (best MP4 with audio)
         id: download
         run: |
-          # Завантажуємо злитий файл
           yt-dlp \
-            --format "bestvideo+bestaudio" \
-            --merge-output-format mp4 \
+            --format "best[ext=mp4]" \
             --allow-unplayable-formats \
             --extractor-args "pinterest:use_webpage=True" \
             --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
