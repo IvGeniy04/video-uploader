@@ -18,6 +18,7 @@ jobs:
     steps:
       - name: Install yt-dlp with embedded ffmpeg
         run: |
+          # Завантажуємо yt-dlp з вбудованим ffmpeg
           curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o yt-dlp
           chmod +x yt-dlp
           sudo mv yt-dlp /usr/local/bin/
@@ -36,6 +37,7 @@ jobs:
       - name: Download video with audio
         id: download
         run: |
+          # Завантажуємо злитий файл
           yt-dlp \
             --format "bestvideo+bestaudio" \
             --merge-output-format mp4 \
@@ -72,7 +74,6 @@ jobs:
           if [[ "$LINK" =~ ^https:// ]]; then
             echo "link=$LINK" >> $GITHUB_OUTPUT
           else
-            echo "❌ Помилка вивантаження: $LINK"
             exit 1
           fi
 
