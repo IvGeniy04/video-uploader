@@ -1,105 +1,114 @@
-# 📁 .github/workflows/upload.yml — version: v2.4
-
-name: \U0001F4E4 Upload Video
+name: Upload Video to Catbox
 
 on:
   workflow_dispatch:
     inputs:
       url:
-        description: 'Video URL'
+        description: 'Video URL (TikTok, Instagram, Pinterest, etc.)'
         required: true
         type: string
       message_id:
-        description: 'Discord message ID'
+        description: 'Discord Message ID for response tracking'
         required: false
         type: string
 
 jobs:
   upload:
     runs-on: ubuntu-latest
-
-    env:
-      DISCORD_RESULTS_WEBHOOK: ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
-
     steps:
-      - name: \U0001F4E6 Checkout repository
-        uses: actions/checkout@v4
-
-      - name: \U0001F4C2 Create folders
-        run: |
-          mkdir -p yt-dlp-FFmpeg
-
-      - name: \U0001F527 Set up FFmpeg & yt-dlp (cache)
-        uses: actions/cache/restore@v4
-        id: ffmpeg-cache
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          path: yt-dlp-FFmpeg
-          key: yt-dlp-FFmpeg-237717375-Linux
+          python-version: '3.11'
 
-      - name: \U0001F4E5 Extract FFmpeg & yt-dlp
-        if: steps.ffmpeg-cache.outputs.cache-hit == 'true'
+      - name: Install ffmpeg
         run: |
-          tar -xf ${{ steps.ffmpeg-cache.outputs.cache-path }} -C yt-dlp-FFmpeg --use-compress-program unzstd
+          sudo apt update
+          sudo apt install -y ffmpeg
 
-      - name: \U0001F4DD Add to PATH
-        run: echo "$(pwd)/yt-dlp-FFmpeg" >> $GITHUB_PATH
-
-      - name: ⬆ Download yt-dlp latest stable
-        uses: actions/cache/restore@v4
-        id: ytdlp-stable-cache
-        with:
-          path: yt-dlp
-          key: yt-dlp-stable-Linux
-
-      - name: ⬇️ Install yt-dlp stable (if cache missed)
-        if: steps.ytdlp-stable-cache.outputs.cache-hit != 'true'
+      - name: Install dependencies
         run: |
-          curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o yt-dlp
-          chmod +x yt-dlp
+          pip install git+https://github.com/yt-dlp/yt-dlp.git
+          pip install requests
 
-      - name: ✅ Confirm yt-dlp version
-        run: yt-dlp --version
-
-      - name: ⬇️ Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y python3 python3-pip
-
-      - name: \U0001F4D1 Install Python requirements (if any)
+      - name: Check and upload video
+        id: catbox
         run: |
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          # Очищаємо URL
+          VIDEO_URL="${{ inputs.url }}"
+          VIDEO_URL=$(echo "$VIDEO_URL" | xargs)
+          MAX_SIZE_BYTES=$((180 * 1024 * 1024))  # 180 MB
 
-      - name: \U0001F4C1 Create temp download folder
-        run: mkdir -p output && cd output
+          echo "🔍 Отримання інформації про відео: $VIDEO_URL"
+          
+          # Отримуємо інформацію для перевірки розміру
+          INFO=$(yt-dlp \
+            --dump-json \
+            --allow-unplayable-formats \
+            --extractor-args "pinterest:use_webpage=True" \
+            --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36" \
+            --no-check-certificate \
+            "$VIDEO_URL" 2>/dev/null)
 
-      - name: \U0001F4C0 Download video
-        run: |
-          yt-dlp "${{ inputs.url }}" -o "output/video.%(ext)s" --no-playlist
+          if [ -z "$INFO" ]; then
+            echo "type=error" >> $GITHUB_OUTPUT
+            exit 1
+          fi
 
-      - name: \U0001F4E3 Notify: Start uploading
-        run: |
-          curl -X POST \
-            -H "Content-Type: application/json" \
-            -d '{"content": "⏫ Uploading to Catbox..."}' \
-            "$DISCORD_RESULTS_WEBHOOK"
+          FILESIZE=$(echo "$INFO" | python3 -c "import sys, json; print(json.load(sys.stdin).get('filesize', 0))")
 
-      - name: \U0001F4E4 Upload to Catbox
-        id: upload_catbox
-        run: |
-          FILE=$(ls output/video.* | head -n1)
-          RESPONSE=$(curl -s -F "reqtype=fileupload" -F "file=@$FILE" https://catbox.moe/user/api.php)
-          echo "url=$RESPONSE" >> $GITHUB_OUTPUT
+          if [ -z "$FILESIZE" ] || [ "$FILESIZE" -eq 0 ]; then
+            echo "⚠️ Розмір невідомий — пробуємо завантажити..."
+          elif [ "$FILESIZE" -gt "$MAX_SIZE_BYTES" ]; then
+            echo "❌ Відео занадто велике: більше 180 MB"
+            if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ] && [ -n "${{ inputs.message_id }}" ]; then
+              curl -X POST -H "Content-Type: application/json" \
+                -d '{"content": "❌ Відео занадто велике (макс. 180 МБ) для message ${{ inputs.message_id }}"}' \
+                ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
+            fi
+            exit 1
+          fi
 
-      - name: \U0001F4AC Post to Discord
+          echo "📥 Завантаження та вивантаження на Catbox..."
+          
+          # Завантажуємо і одразу вивантажуємо
+          OUTPUT_LINK=$(yt-dlp \
+            --merge-output-format mp4 \
+            --allow-unplayable-formats \
+            --extractor-args "pinterest:use_webpage=True" \
+            --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36" \
+            --no-check-certificate \
+            --output - \
+            "$VIDEO_URL" | \
+            curl -H "Expect:" \
+            -F "reqtype=fileupload" \
+            -F "fileToUpload=@-;filename=video.mp4;type=video/mp4" \
+            https://catbox.moe/user/api.php)
+
+          if [[ "$OUTPUT_LINK" =~ ^https:// ]]; then
+            echo "✅ Успішно: $OUTPUT_LINK"
+            echo "link=$OUTPUT_LINK" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Помилка вивантаження: $OUTPUT_LINK"
+            if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ] && [ -n "${{ inputs.message_id }}" ]; then
+              curl -X POST -H "Content-Type: application/json" \
+                -d '{"content": "❌ Не вдалося вивантажити на Catbox для message ${{ inputs.message_id }}"}' \
+                ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
+            fi
+            exit 1
+          fi
+
+      - name: Send result to results channel
         if: success()
         run: |
-          curl -X POST \
-            -H "Content-Type: application/json" \
-            -d "{\"content\": \"✅ Video uploaded: ${{ steps.upload_catbox.outputs.url }}\", \"message_reference\": {\"message_id\": \"${{ inputs.message_id }}\"}}" \
-            "$DISCORD_RESULTS_WEBHOOK"
+          MESSAGE_ID="${{ inputs.message_id }}"
+          if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ] && [ -n "$MESSAGE_ID" ]; then
+            curl -X POST -H "Content-Type: application/json" \
+            -d '{"content": "🔗 Result for message '"$MESSAGE_ID"': ${{ steps.catbox.outputs.link }}"}' \
+            ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
+          fi
 
-      - name: ❌ Notify on failure
-        if: failure()
+      - name: Clean up
+        if: always()
         run: |
-          curl -X POST \
-            -H "Content-Type: application/json" \
-            -d '{"content": "❌ Не вдалося обробити відео"}' \
-            "$DISCORD_RESULTS_WEBHOOK"
+          rm -f video.mp4
