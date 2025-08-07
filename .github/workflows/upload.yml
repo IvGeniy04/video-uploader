@@ -88,8 +88,18 @@ jobs:
       - name: 📡 Send to Discord
         if: success()
         run: |
-          curl -X POST "$DISCORD_WEBHOOK_URL" \
+          WEBHOOK="$DISCORD_WEBHOOK_URL"
+          URL="${{ steps.upload_step.outputs.file_url }}"
+          MESSAGE_ID="${{ github.event.inputs.message_id }}"
+          
+          if [ -n "$MESSAGE_ID" ]; then
+            LINK="https://discord.com/channels/YOUR_SERVER_ID/YOUR_CHANNEL_ID/$MESSAGE_ID"
+            CONTENT="**🎥 Обробка завершена**\n🔗 Повідомлення: $LINK\n📁 Завантажено: $URL"
+          else
+            CONTENT="**🎥 Обробка завершена**\n📁 Завантажено: $URL"
+          fi
+          
+          curl -X POST "$WEBHOOK" \
             -H "Content-Type: application/json" \
-            -d '{
-              "content": "**🎥 Обробка завершена**\n${{ github.event.inputs.message_id && format("Повідомлення: https://discord.com/channels/YOUR_SERVER_ID/YOUR_CHANNEL_ID/{0}", github.event.inputs.message_id) || "" }}\n📁 Завантажено: '${{ steps.upload_step.outputs.file_url }}'"
-            }'
+            -d "{\"content\": \"$CONTENT\"}"
+
