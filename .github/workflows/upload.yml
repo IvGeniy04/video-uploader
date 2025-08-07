@@ -16,13 +16,39 @@ jobs:
   upload:
     runs-on: ubuntu-latest
     steps:
-      - name: Install yt-dlp with embedded ffmpeg
-        run: |
-          curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o yt-dlp
-          chmod +x yt-dlp
-          sudo mv yt-dlp /usr/local/bin/
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Install requests
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Cache yt-dlp
+        uses: actions/cache@v3
+        with:
+          path: ~/.local/bin/yt-dlp
+          key: yt-dlp-latest
+
+      - name: Install yt-dlp (cached)
+        if: steps.cache-yt-dlp.outputs.cache-hit != 'true'
+        run: |
+          curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o ~/.local/bin/yt-dlp
+          chmod +x ~/.local/bin/yt-dlp
+          export PATH="$HOME/.local/bin:$PATH"
+
+      - name: Cache ffmpeg
+        uses: actions/cache@v3
+        with:
+          path: /usr/local/bin/ffmpeg
+          key: ffmpeg-6.0
+
+      - name: Install ffmpeg (if not cached)
+        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
+        run: |
+          sudo apt update && sudo apt install -y ffmpeg
+
+      - name: Install requests (cached pip)
         run: |
           pip install requests
 
@@ -38,12 +64,11 @@ jobs:
         run: |
           echo "NORMALIZED_URL=$(echo '${{ inputs.url }}' | sed 's|https://t\.me/|https://telegram.org/|')" >> $GITHUB_ENV
 
-      - name: Set URL for processing
+      - name: Set processing URL
         run: |
+          echo "PROCESSING_URL=${{ inputs.url }}" >> $GITHUB_ENV
           if [ -n "$NORMALIZED_URL" ]; then
             echo "PROCESSING_URL=$NORMALIZED_URL" >> $GITHUB_ENV
-          else
-            echo "PROCESSING_URL=${{ inputs.url }}" >> $GITHUB_ENV
           fi
 
       - name: Download and upload video
@@ -59,16 +84,15 @@ jobs:
             EXTRA_ARGS="--extractor-args 'pinterest:use_webpage=True'"
           fi
 
-          # Для Telegram — спробуємо кращий User-Agent
+          # Для Telegram — свій User-Agent
           if [[ "$VIDEO_URL" == *"telegram.org"* ]]; then
             USER_AGENT="Mozilla/5.0 (compatible; TelegramBot)"
           else
             USER_AGENT="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
           fi
 
-          # Отримуємо інформацію
+          # Перевірка розміру
           INFO=$(yt-dlp --dump-json $EXTRA_ARGS --user-agent "$USER_AGENT" --no-check-certificate "$VIDEO_URL" 2>/dev/null)
-
           if [ -z "$INFO" ]; then
             echo "❌ No info — trying direct download"
           else
@@ -79,7 +103,7 @@ jobs:
             fi
           fi
 
-          # Завантажуємо і вивантажуємо
+          # Завантаження та вивантаження
           OUTPUT_LINK=$(yt-dlp \
             $EXTRA_ARGS \
             --user-agent "$USER_AGENT" \
