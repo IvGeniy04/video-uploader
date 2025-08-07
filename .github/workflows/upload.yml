@@ -62,20 +62,32 @@ jobs:
           echo "source_type=$TYPE" >> $GITHUB_OUTPUT
           echo "TYPE=$TYPE" >> $GITHUB_ENV
 
-      - name: Download and upload to Catbox
+      - name: Download, merge and upload to Catbox
         id: catbox
         run: |
           echo "Downloading from: $FINAL_URL"
-          
-          yt-dlp --retries 2 --fragment-retries 2 --merge-output-format mp4 \
-            --format bestvideo+bestaudio/best --output - "$FINAL_URL" |
+
+          yt-dlp --retries 2 --fragment-retries 2 \
+            --merge-output-format mp4 \
+            --output "output.%(ext)s" "$FINAL_URL"
+
+          FILE=$(ls output.* | head -n1)
+
+          if [ ! -f "$FILE" ]; then
+            echo "❌ No video file downloaded"
+            exit 1
+          fi
+
+          echo "Uploading file: $FILE"
+
           curl -s -H "Expect:" -F "reqtype=fileupload" \
-            -F "fileToUpload=@-;filename=video.mp4;type=video/mp4" \
+            -F "fileToUpload=@$FILE" \
             https://catbox.moe/user/api.php > link.txt || exit 1
 
           LINK=$(cat link.txt)
           echo "Uploaded to Catbox: $LINK"
           echo "link=$LINK" >> $GITHUB_OUTPUT
+
 
       - name: Send result to Discord
         if: ${{ steps.catbox.outputs.link }}
