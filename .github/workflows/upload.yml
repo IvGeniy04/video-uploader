@@ -26,72 +26,66 @@ jobs:
         run: |
           pip install requests
 
-      - name: Normalize Telegram URL
-        run: |
-          echo "Original URL: ${{ inputs.url }}"
-          export NORMALIZED_URL=$(echo "${{ inputs.url }}" | sed 's|https://t\.me/|https://telegram.org/|')
-          echo "Normalized URL: $NORMALIZED_URL"
-          echo "NORMALIZED_URL=$NORMALIZED_URL" >> $GITHUB_ENV
-
       - name: Warm up Facebook
-        if: contains(env.NORMALIZED_URL, 'facebook.com') || contains(env.NORMALIZED_URL, 'fb.watch')
+        if: contains(inputs.url, 'facebook.com') || contains(inputs.url, 'fb.watch')
         run: |
-          curl -s -L -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36" \
-            --max-time 30 "$NORMALIZED_URL" > /dev/null 2>&1 || true
+          curl -s -L -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
+            --max-time 30 "${{ inputs.url }}" > /dev/null 2>&1 || true
           sleep 3
 
-      - name: Check and upload video
+      - name: Normalize Telegram URL
+        if: contains(inputs.url, 't.me')
+        run: |
+          echo "NORMALIZED_URL=$(echo '${{ inputs.url }}' | sed 's|https://t\.me/|https://telegram.org/|')" >> $GITHUB_ENV
+
+      - name: Set URL for processing
+        run: |
+          if [ -n "$NORMALIZED_URL" ]; then
+            echo "PROCESSING_URL=$NORMALIZED_URL" >> $GITHUB_ENV
+          else
+            echo "PROCESSING_URL=${{ inputs.url }}" >> $GITHUB_ENV
+          fi
+
+      - name: Download and upload video
         id: catbox
         run: |
-          # Очищаємо URL
-          VIDEO_URL="$NORMALIZED_URL"
-          VIDEO_URL=$(echo "$VIDEO_URL" | xargs)
-          MAX_SIZE_BYTES=$((180 * 1024 * 1024))  # 180 MB
+          MAX_SIZE_BYTES=$((180 * 1024 * 1024))
+          VIDEO_URL="$PROCESSING_URL"
 
-          echo "🔍 Отримання інформації про відео: $VIDEO_URL"
-          
-          # Отримуємо інформацію для перевірки розміру
-          INFO=$(yt-dlp \
-            --dump-json \
-            --allow-unplayable-formats \
-            --extractor-args "pinterest:use_webpage=True" \
-            --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36" \
-            --no-check-certificate \
-            "$VIDEO_URL" 2>/dev/null)
+          echo "🔍 Processing: $VIDEO_URL"
+
+          # Для Pinterest — обов’язково use_webpage
+          if [[ "$VIDEO_URL" == *"pinterest"* || "$VIDEO_URL" == *"pin.it"* ]]; then
+            EXTRA_ARGS="--extractor-args 'pinterest:use_webpage=True'"
+          fi
+
+          # Для Telegram — спробуємо кращий User-Agent
+          if [[ "$VIDEO_URL" == *"telegram.org"* ]]; then
+            USER_AGENT="Mozilla/5.0 (compatible; TelegramBot)"
+          else
+            USER_AGENT="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+          fi
+
+          # Отримуємо інформацію
+          INFO=$(yt-dlp --dump-json $EXTRA_ARGS --user-agent "$USER_AGENT" --no-check-certificate "$VIDEO_URL" 2>/dev/null)
 
           if [ -z "$INFO" ]; then
-            echo "❌ Не вдалося отримати інформацію про відео"
-            if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ]; then
-              curl -X POST -H "Content-Type: application/json" \
-                -d '{"content": "❌ Не вдалося отримати відео для message ${{ inputs.message_id }}"}' \
-                ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
+            echo "❌ No info — trying direct download"
+          else
+            FILESIZE=$(echo "$INFO" | python3 -c "import sys, json; print(json.load(sys.stdin).get('filesize', 0))")
+            if [ "$FILESIZE" -gt "$MAX_SIZE_BYTES" ] && [ "$FILESIZE" -gt 0 ]; then
+              echo "❌ Too large"
+              exit 1
             fi
-            exit 1
           fi
 
-          FILESIZE=$(echo "$INFO" | python3 -c "import sys, json; print(json.load(sys.stdin).get('filesize', 0))")
-
-          if [ -z "$FILESIZE" ] || [ "$FILESIZE" -eq 0 ]; then
-            echo "⚠️ Розмір невідомий — пробуємо завантажити..."
-          elif [ "$FILESIZE" -gt "$MAX_SIZE_BYTES" ]; then
-            echo "❌ Відео занадто велике: більше 180 MB"
-            if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ]; then
-              curl -X POST -H "Content-Type: application/json" \
-                -d '{"content": "❌ Відео занадто велике (макс. 180 МБ) для message ${{ inputs.message_id }}"}' \
-                ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
-            fi
-            exit 1
-          fi
-
-          echo "📥 Завантаження та вивантаження на Catbox..."
-          
-          # Завантажуємо і одразу вивантажуємо
+          # Завантажуємо і вивантажуємо
           OUTPUT_LINK=$(yt-dlp \
-            --merge-output-format mp4 \
-            --allow-unplayable-formats \
-            --extractor-args "pinterest:use_webpage=True" \
-            --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36" \
+            $EXTRA_ARGS \
+            --user-agent "$USER_AGENT" \
             --no-check-certificate \
+            --format "best[ext=mp4]" \
+            --merge-output-format mp4 \
             --output - \
             "$VIDEO_URL" | \
             curl -f -s -H "Expect:" \
@@ -99,17 +93,9 @@ jobs:
             -F "fileToUpload=@-;filename=video.mp4;type=video/mp4" \
             https://catbox.moe/user/api.php)
 
-          # Сувора перевірка відповіді
           if [[ "$OUTPUT_LINK" =~ ^https://files\.catbox\.moe/.*\.(mp4|webm)$ ]]; then
-            echo "✅ Успішно: $OUTPUT_LINK"
             echo "link=$OUTPUT_LINK" >> $GITHUB_OUTPUT
           else
-            echo "❌ Помилка вивантаження: отримано некоректну відповідь: $OUTPUT_LINK"
-            if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ]; then
-              curl -X POST -H "Content-Type: application/json" \
-                -d '{"content": "❌ Не вдалося вивантажити на Catbox для message ${{ inputs.message_id }}"}' \
-                ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
-            fi
             exit 1
           fi
 
@@ -117,7 +103,7 @@ jobs:
         if: success()
         run: |
           MESSAGE_ID="${{ inputs.message_id }}"
-          if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ] && [ -n "$MESSAGE_ID" ] && [ -n "${{ steps.catbox.outputs.link }}" ]; then
+          if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ] && [ -n "$MESSAGE_ID" ]; then
             curl -X POST -H "Content-Type: application/json" \
             -d "{\"content\": \"🔗 Result for message $MESSAGE_ID: ${{ steps.catbox.outputs.link }}\"}" \
             ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
