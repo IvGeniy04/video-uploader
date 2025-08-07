@@ -1,36 +1,37 @@
-name: Video Upload Workflow
-
+name: Upload Video
 on:
   workflow_dispatch:
     inputs:
       url:
-        description: 'Video URL'
+        description: 'URL to download'
         required: true
-        type: string
       message_id:
         description: 'Discord message ID (optional)'
         required: false
-        type: string
 
 jobs:
-  download-and-upload:
+  upload_video:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Setup yt-dlp with cache
+      - name: Set URL variable
+        id: vars
+        run: |
+          echo "FINAL_URL=$(curl -Ls -o /dev/null -w '%{url_effective}' '${{ github.event.inputs.url }}')" >> $GITHUB_ENV
+          echo "Resolved final URL: $FINAL_URL"
+
+      - name: Clean previous videos
+        run: rm -f video.*
+
+      - name: Setup yt-dlp (with cache)
         uses: AnimMouse/setup-yt-dlp@v3
         with:
-          cache: 'true'
-
-      - name: Resolve final URL
-        id: resolve
-        run: |
-          FINAL_URL=$(curl -Ls -o /dev/null -w '%{url_effective}' "${{ inputs.url }}")
-          echo "FINAL_URL=$FINAL_URL" >> $GITHUB_ENV
-          echo "✅ Resolved final URL: $FINAL_URL"
+          version: stable
+          cache: true
+          aria2: true
 
       - name: Download video with audio (best format)
         id: download
@@ -40,23 +41,28 @@ jobs:
           ls -lh video.*
           FILE=$(ls video.* | head -n1)
           echo "FILE=$FILE" >> $GITHUB_ENV
+          echo "✅ Downloaded file: $FILE"
 
       - name: Upload to Catbox
         id: upload
         run: |
+          echo "🧾 Current directory files:"
+          ls -lh
           echo "📤 Uploading $FILE to Catbox..."
+          if [[ ! -f "$FILE" ]]; then
+            echo "❌ ERROR: File '$FILE' not found!"
+            exit 1
+          fi
           URL=$(curl -s -F "reqtype=fileupload" -F "file=@$FILE" https://catbox.moe/user/api.php)
           echo "URL=$URL" >> $GITHUB_OUTPUT
           echo "✅ Uploaded URL: $URL"
-          rm -f video.*
+          rm -f "$FILE"
 
-      - name: Send message to Discord
+      - name: Send result to Discord
+        if: success()
         run: |
           CONTENT="✅ Video uploaded: ${{ steps.upload.outputs.URL }}"
-          if [ -n "${{ inputs.message_id }}" ]; then
-            CONTENT="$CONTENT (reply to message ID: ${{ inputs.message_id }})"
-          fi
-          echo "📣 Sending to Discord: $CONTENT"
-          curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
-            -H "Content-Type: application/json" \
-            -d "{\"content\":\"$CONTENT\"}"
+          echo "📣 Sending to Discord: $CONTENT (reply to message ID: ${{ github.event.inputs.message_id || 'none' }})"
+          curl -X POST -H "Content-Type: application/json" \
+            -d "{\"content\": \"$CONTENT\", \"message_reference\": {\"message_id\": \"${{ github.event.inputs.message_id || '' }}\"}}" \
+            https://discord.com/api/webhooks/YOUR_WEBHOOK_URL_HERE
