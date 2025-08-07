@@ -1,62 +1,61 @@
-name: Upload Video v1.6
+name: Upload Video v1.7
 
 on:
   workflow_dispatch:
     inputs:
       url:
-        description: 'URL to download'
+        description: 'Video URL to download'
         required: true
       message_id:
-        description: 'Discord message ID (optional)'
+        description: 'Discord message ID'
         required: false
 
 jobs:
   upload_video:
     runs-on: ubuntu-latest
+    env:
+      CATBOX_TOKEN: ${{ secrets.CATBOX_TOKEN }}
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
+      DISCORD_GUILD_ID: ${{ secrets.DISCORD_GUILD_ID }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      - name: Cache yt-dlp cache directory
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/yt-dlp
-          key: yt-dlp-cache-${{ runner.os }}-${{ hashFiles('**/upload.yml') }}
-          restore-keys: |
-            yt-dlp-cache-${{ runner.os }}-
-
-      - name: Setup yt-dlp with aria2
+      - name: Setup yt-dlp with aria2 (cached) v1.7
         uses: AnimMouse/setup-yt-dlp@v3
         with:
-          version: stable
           aria2: true
+        # Версія yt-dlp не вказана, щоб використовувався кеш або дефолтна, щоб уникнути помилок завантаження
 
-      - name: Download video
+      - name: Setup ffmpeg (cached)
+        uses: AnimMouse/setup-yt-dlp/ffmpeg@v3
+
+      - name: Resolve final URL
+        id: resolve_url
         run: |
           FINAL_URL=$(curl -Ls -o /dev/null -w '%{url_effective}' "${{ github.event.inputs.url }}")
-          echo "📥 Downloading from: $FINAL_URL"
-          yt-dlp --verbose --format "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best" --merge-output-format mp4 --no-playlist -o "video.%(ext)s" "$FINAL_URL"
-          ls -lah video.*
+          echo "Resolved final URL: $FINAL_URL"
+          echo "final_url=$FINAL_URL" >> $GITHUB_OUTPUT
 
-      - name: Upload video to Catbox
+      - name: Download video with yt-dlp v1.7
+        run: |
+          echo "📥 Downloading from: '${{ steps.resolve_url.outputs.final_url }}'"
+          yt-dlp --verbose --format "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best" --merge-output-format mp4 --no-playlist -o "video.%(ext)s" "${{ steps.resolve_url.outputs.final_url }}"
+          ls -lh video.*
+
+      - name: Upload to Catbox v1.7
         id: upload
         run: |
           FILE=$(ls video.* | head -n1)
           echo "📤 Uploading $FILE to Catbox..."
-          RESPONSE=$(curl -F "reqtype=fileupload" -F "fileToUpload=@$FILE" https://catbox.moe/user/api.php)
-          echo "✅ Uploaded URL: $RESPONSE"
-          echo "::set-output name=url::$RESPONSE"
+          RESPONSE=$(curl -sF "reqtype=fileupload" -F "fileToUpload=@$FILE" https://catbox.moe/user/api.php)
+          echo "Catbox response: $RESPONSE"
+          echo "upload_url=$RESPONSE" >> $GITHUB_OUTPUT
 
-      - name: Send Discord message
+      - name: Send Discord notification v1.7
         run: |
-          UPLOAD_URL="${{ steps.upload.outputs.url }}"
-          MESSAGE="✅ Video uploaded: $UPLOAD_URL"
-          if [ -n "${{ github.event.inputs.message_id }}" ]; then
-            MESSAGE="✅ Video uploaded: $UPLOAD_URL (повідомлення: https://discord.com/channels/YOUR_SERVER_ID/YOUR_CHANNEL_ID/${{ github.event.inputs.message_id }})"
-          fi
-          echo "📣 Sending to Discord: $MESSAGE"
-          curl -H "Authorization: Bot ${{ secrets.DISCORD_BOT_TOKEN }}" \
-               -H "Content-Type: application/json" \
-               -X POST \
-               -d "{\"content\":\"$MESSAGE\"}" \
-               "https://discord.com/api/v10/channels/YOUR_CHANNEL_ID/messages"
+          CONTENT="✅ Video uploaded: ${{ steps.upload.outputs.upload_url }}"
+          echo "📣 Sending to Discord: $CONTENT (reply to message ID: ${{ github.event.inputs.message_id || 'none' }})"
+          curl -X POST -H "Content-Type: application/json" -d "{\"content\":\"$CONTENT\"}" $DISCORD_WEBHOOK_URL
