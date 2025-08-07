@@ -29,35 +29,36 @@ jobs:
           FINAL=$(curl -Ls -o /dev/null -w '%{url_effective}' "$URL")
           echo "FINAL_URL=$FINAL" >> $GITHUB_ENV
 
-      - name: Download, merge audio+video, upload, and clean up
-        id: catbox
-        run: |
-          echo "Downloading from $FINAL_URL..."
-          yt-dlp --verbose --retries 2 --fragment-retries 2 \
-            --format "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best" \
-            --merge-output-format mp4 \
-            -o "video.%(ext)s" "$FINAL_URL"
+- name: Download, merge audio+video, upload, and clean up
+  id: catbox
+  run: |
+    echo "Downloading from $FINAL_URL..."
 
-          FILE=$(ls video.* | head -n1)
-          if [ ! -f "$FILE" ]; then
-            echo "❌ No merged video file found"
-            exit 1
-          fi
+    yt-dlp --verbose --retries 2 --fragment-retries 2 \
+      --format "bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo[ext=mp4]/best" \
+      --merge-output-format mp4 \
+      -o "video.%(ext)s" "$FINAL_URL"
 
-          echo "Uploading $FILE to Catbox..."
-          LINK=$(curl -s -H "Expect:" \
-            -F "reqtype=fileupload" -F "fileToUpload=@$FILE" \
-            https://catbox.moe/user/api.php)
+    FILE=$(ls video.* | head -n1)
+    if [ ! -f "$FILE" ]; then
+      echo "❌ No merged or standalone video file found"
+      exit 1
+    fi
 
-          if [[ $LINK == https://* ]]; then
-            echo "link=$LINK" >> $GITHUB_OUTPUT
-          else
-            echo "❌ Upload failed: $LINK"
-            exit 1
-          fi
+    echo "Uploading $FILE to Catbox..."
+    LINK=$(curl -s -H "Expect:" \
+      -F "reqtype=fileupload" -F "fileToUpload=@$FILE" \
+      https://catbox.moe/user/api.php)
 
-          # Cleanup
-          rm -f video.*
+    if [[ $LINK == https://* ]]; then
+      echo "link=$LINK" >> $GITHUB_OUTPUT
+    else
+      echo "❌ Upload failed: $LINK"
+      exit 1
+    fi
+
+    rm -f video.*
+
 
       - name: Send to Discord
         if: steps.catbox.outputs.link
