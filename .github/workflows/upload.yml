@@ -1,53 +1,105 @@
-name: 📤 Upload video to Catbox
+# 📁 .github/workflows/upload.yml — version: v2.4
+
+name: \U0001F4E4 Upload Video
 
 on:
   workflow_dispatch:
     inputs:
       url:
-        description: 'URL to process'
+        description: 'Video URL'
         required: true
+        type: string
       message_id:
-        description: 'Message ID'
-        required: true
+        description: 'Discord message ID'
+        required: false
+        type: string
 
 jobs:
   upload:
     runs-on: ubuntu-latest
 
+    env:
+      DISCORD_RESULTS_WEBHOOK: ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
+
     steps:
-      - name: 🧾 Checkout
+      - name: \U0001F4E6 Checkout repository
         uses: actions/checkout@v4
 
-      - name: 📦 Restore yt-dlp + FFmpeg cache
+      - name: \U0001F4C2 Create folders
+        run: |
+          mkdir -p yt-dlp-FFmpeg
+
+      - name: \U0001F527 Set up FFmpeg & yt-dlp (cache)
         uses: actions/cache/restore@v4
-        id: cache-restore
+        id: ffmpeg-cache
         with:
           path: yt-dlp-FFmpeg
-          key: yt-dlp-FFmpeg-${{ runner.os }}-${{ hashFiles('.github/cache-version.txt') }}
+          key: yt-dlp-FFmpeg-237717375-Linux
 
-      - name: 🔽 Setup yt-dlp & FFmpeg
-        uses: AnimMouse/setup-yt-dlp@v3
+      - name: \U0001F4E5 Extract FFmpeg & yt-dlp
+        if: steps.ffmpeg-cache.outputs.cache-hit == 'true'
+        run: |
+          tar -xf ${{ steps.ffmpeg-cache.outputs.cache-path }} -C yt-dlp-FFmpeg --use-compress-program unzstd
+
+      - name: \U0001F4DD Add to PATH
+        run: echo "$(pwd)/yt-dlp-FFmpeg" >> $GITHUB_PATH
+
+      - name: ⬆ Download yt-dlp latest stable
+        uses: actions/cache/restore@v4
+        id: ytdlp-stable-cache
         with:
-          ffmpeg: true
-          cache: ${{ steps.cache-restore.outputs.cache-hit != 'true' }}
+          path: yt-dlp
+          key: yt-dlp-stable-Linux
 
-      - name: 📥 Download video with yt-dlp
+      - name: ⬇️ Install yt-dlp stable (if cache missed)
+        if: steps.ytdlp-stable-cache.outputs.cache-hit != 'true'
         run: |
-          yt-dlp --no-playlist --no-check-certificate --no-warnings -f mp4 -o "video.%(ext)s" "${{ github.event.inputs.url }}"
+          curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o yt-dlp
+          chmod +x yt-dlp
 
-      - name: 📤 Upload to Catbox
+      - name: ✅ Confirm yt-dlp version
+        run: yt-dlp --version
+
+      - name: ⬇️ Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y python3 python3-pip
+
+      - name: \U0001F4D1 Install Python requirements (if any)
         run: |
-          FILE=$(ls video.* | head -n1)
-          echo "📤 Uploading $FILE to Catbox..."
-          RESPONSE=$(curl -s -F "reqtype=fileupload" -F "file=@$FILE" https://catbox.moe/user/api.php)
-          echo "Catbox response: $RESPONSE"
-          echo "UPLOAD_URL=$RESPONSE" >> $GITHUB_ENV
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: 📣 Send result to Discord
+      - name: \U0001F4C1 Create temp download folder
+        run: mkdir -p output && cd output
+
+      - name: \U0001F4C0 Download video
+        run: |
+          yt-dlp "${{ inputs.url }}" -o "output/video.%(ext)s" --no-playlist
+
+      - name: \U0001F4E3 Notify: Start uploading
         run: |
           curl -X POST \
             -H "Content-Type: application/json" \
-            -d "{\"content\": \"✅ Video uploaded: $UPLOAD_URL\", \"message_reference\": {\"message_id\": \"${{ github.event.inputs.message_id }}\"}}" \
-            $DISCORD_WEBHOOK_URL
-        env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+            -d '{"content": "⏫ Uploading to Catbox..."}' \
+            "$DISCORD_RESULTS_WEBHOOK"
+
+      - name: \U0001F4E4 Upload to Catbox
+        id: upload_catbox
+        run: |
+          FILE=$(ls output/video.* | head -n1)
+          RESPONSE=$(curl -s -F "reqtype=fileupload" -F "file=@$FILE" https://catbox.moe/user/api.php)
+          echo "url=$RESPONSE" >> $GITHUB_OUTPUT
+
+      - name: \U0001F4AC Post to Discord
+        if: success()
+        run: |
+          curl -X POST \
+            -H "Content-Type: application/json" \
+            -d "{\"content\": \"✅ Video uploaded: ${{ steps.upload_catbox.outputs.url }}\", \"message_reference\": {\"message_id\": \"${{ inputs.message_id }}\"}}" \
+            "$DISCORD_RESULTS_WEBHOOK"
+
+      - name: ❌ Notify on failure
+        if: failure()
+        run: |
+          curl -X POST \
+            -H "Content-Type: application/json" \
+            -d '{"content": "❌ Не вдалося обробити відео"}' \
+            "$DISCORD_RESULTS_WEBHOOK"
