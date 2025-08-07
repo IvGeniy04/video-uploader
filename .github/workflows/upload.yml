@@ -31,15 +31,9 @@ jobs:
           ffmpeg: true
           cache: ${{ steps.cache-restore.outputs.cache-hit != 'true' }}
 
-      - name: ⚙️ Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      # ⛔️ Removed 'pip install -r requirements.txt' because the file is missing
-
-      - name: 📥 Download video
-        run: python scripts/download.py "${{ github.event.inputs.url }}"
+      - name: 📥 Download video with yt-dlp
+        run: |
+          yt-dlp --no-playlist --no-check-certificate --no-warnings -f mp4 -o "video.%(ext)s" "${{ github.event.inputs.url }}"
 
       - name: 📤 Upload to Catbox
         run: |
