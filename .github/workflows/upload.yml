@@ -17,20 +17,28 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      - name: Cache yt-dlp
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/yt-dlp
+          key: yt-dlp-cache-${{ runner.os }}-${{ hashFiles('**/upload.yml') }}
+          restore-keys: |
+            yt-dlp-cache-${{ runner.os }}-
+
       - name: Set URL variable
         id: vars
         run: |
-          echo "FINAL_URL=$(curl -Ls -o /dev/null -w '%{url_effective}' '${{ github.event.inputs.url }}')" >> $GITHUB_ENV
-          echo "Resolved final URL: $FINAL_URL"
+          FINAL_URL=$(curl -Ls -o /dev/null -w '%{url_effective}' "${{ github.event.inputs.url }}")
+          echo "FINAL_URL=$FINAL_URL" >> $GITHUB_ENV
+          echo "✅ Resolved final URL: $FINAL_URL"
 
       - name: Clean previous videos
         run: rm -f video.*
 
-      - name: Setup yt-dlp (with cache)
+      - name: Setup yt-dlp (with aria2)
         uses: AnimMouse/setup-yt-dlp@v3
         with:
           version: stable
-          cache: true
           aria2: true
 
       - name: Download video with audio (best format)
