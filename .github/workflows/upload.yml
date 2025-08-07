@@ -1,15 +1,13 @@
-name: upload_video
-
-description: "📤 Upload video to Catbox and post result to Discord"
+name: 📤 Upload video to Catbox
 
 on:
   workflow_dispatch:
     inputs:
-      message_id:
-        description: 'ID of the message to reply to'
-        required: false
       url:
-        description: 'URL to download'
+        description: 'URL to process'
+        required: true
+      message_id:
+        description: 'Message ID'
         required: true
 
 jobs:
@@ -17,50 +15,46 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: 🧾 Checkout
         uses: actions/checkout@v4
 
-      - name: Setup yt-dlp and FFmpeg
-        uses: AnimMouse/setup-yt-dlp@v3
-
-      - name: Cache yt-dlp-FFmpeg
-        id: cache-ffmpeg
-        uses: actions/cache@v4
+      - name: 📦 Restore yt-dlp + FFmpeg cache
+        uses: actions/cache/restore@v4
+        id: cache-restore
         with:
           path: yt-dlp-FFmpeg
-          key: yt-dlp-FFmpeg-237717375-Linux
+          key: yt-dlp-FFmpeg-${{ runner.os }}-${{ hashFiles('.github/cache-version.txt') }}
 
-      - name: Download yt-dlp-FFmpeg if cache missed
-        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
-        run: |
-          mkdir -p yt-dlp-FFmpeg
-          curl -L https://github.com/AnimMouse/setup-yt-dlp/releases/download/237717375/yt-dlp-FFmpeg-Linux.tar.zst -o ffmpeg.tar.zst
-          tar --use-compress-program=unzstd -xvf ffmpeg.tar.zst -C yt-dlp-FFmpeg
+      - name: 🔽 Setup yt-dlp & FFmpeg
+        uses: AnimMouse/setup-yt-dlp@v3
+        with:
+          ffmpeg: true
+          cache: ${{ steps.cache-restore.outputs.cache-hit != 'true' }}
 
-      - name: Add tool cache to PATH
-        run: echo "$(pwd)/yt-dlp-FFmpeg" >> $GITHUB_PATH
+      - name: ⚙️ Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
-      - name: Download video using yt-dlp
-        run: |
-          yt-dlp "${{ github.event.inputs.url }}" -o video.%(ext)s
+      - name: 📦 Install dependencies
+        run: pip install -r requirements.txt
 
-      - name: Find downloaded file
-        id: getfile
+      - name: 📥 Download video
+        run: python scripts/download.py "${{ github.event.inputs.url }}"
+
+      - name: 📤 Upload to Catbox
         run: |
           FILE=$(ls video.* | head -n1)
-          echo "file=$FILE" >> $GITHUB_OUTPUT
-
-      - name: Upload to Catbox
-        id: upload
-        run: |
-          FILE=${{ steps.getfile.outputs.file }}
           echo "📤 Uploading $FILE to Catbox..."
-          RESPONSE=$(curl -s -F "reqtype=fileupload" -F "file=@$FILE" https://catbox.moe/user/api.php)
+          RESPONSE=$(curl -F "reqtype=fileupload" -F "file=@$FILE" https://catbox.moe/user/api.php)
           echo "Catbox response: $RESPONSE"
-          echo "url=$RESPONSE" >> $GITHUB_OUTPUT
+          echo "UPLOAD_URL=$RESPONSE" >> $GITHUB_ENV
 
-      - name: Send to Discord via curl webhook
+      - name: 📣 Send result to Discord
         run: |
-          curl -X POST "${{ secrets.DISCORD_WEBHOOK }}" \
-            -H 'Content-Type: application/json' \
-            -d "{\"content\":\"✅ Video uploaded: ${{ steps.upload.outputs.url }} (reply to message ID: ${{ github.event.inputs.message_id }})\"}"
+          curl -X POST \
+            -H "Content-Type: application/json" \
+            -d "{\"content\": \"✅ Video uploaded: $UPLOAD_URL\", \"message_reference\": {\"message_id\": \"${{ github.event.inputs.message_id }}\"}}" \
+            $DISCORD_WEBHOOK_URL
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
