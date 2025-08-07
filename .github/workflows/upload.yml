@@ -1,4 +1,4 @@
-name: Upload Video v1.5
+name: Upload Video v1.6
 
 on:
   workflow_dispatch:
@@ -39,6 +39,7 @@ jobs:
           ls -lah video.*
 
       - name: Upload video to Catbox
+        id: upload
         run: |
           FILE=$(ls video.* | head -n1)
           echo "📤 Uploading $FILE to Catbox..."
