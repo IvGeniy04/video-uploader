@@ -1,54 +1,66 @@
 name: upload_video
 
+description: "📤 Upload video to Catbox and post result to Discord"
+
 on:
   workflow_dispatch:
     inputs:
       message_id:
         description: 'ID of the message to reply to'
         required: false
+      url:
+        description: 'URL to download'
+        required: true
 
 jobs:
   upload:
     runs-on: ubuntu-latest
+
     steps:
-      - name: 🧾 Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: 🛠 Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: 🧩 Setup yt-dlp v3
+      - name: Setup yt-dlp and FFmpeg
         uses: AnimMouse/setup-yt-dlp@v3
 
-      - name: 🎥 Get video file
+      - name: Cache yt-dlp-FFmpeg
+        id: cache-ffmpeg
+        uses: actions/cache@v4
+        with:
+          path: yt-dlp-FFmpeg
+          key: yt-dlp-FFmpeg-237717375-Linux
+
+      - name: Download yt-dlp-FFmpeg if cache missed
+        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p yt-dlp-FFmpeg
+          curl -L https://github.com/AnimMouse/setup-yt-dlp/releases/download/237717375/yt-dlp-FFmpeg-Linux.tar.zst -o ffmpeg.tar.zst
+          tar --use-compress-program=unzstd -xvf ffmpeg.tar.zst -C yt-dlp-FFmpeg
+
+      - name: Add tool cache to PATH
+        run: echo "$(pwd)/yt-dlp-FFmpeg" >> $GITHUB_PATH
+
+      - name: Download video using yt-dlp
+        run: |
+          yt-dlp "${{ github.event.inputs.url }}" -o video.%(ext)s
+
+      - name: Find downloaded file
+        id: getfile
         run: |
           FILE=$(ls video.* | head -n1)
-          echo "Found video file: $FILE"
-          echo "FILE=$FILE" >> $GITHUB_ENV
+          echo "file=$FILE" >> $GITHUB_OUTPUT
 
-      - name: 📤 Upload to Catbox v1.9
+      - name: Upload to Catbox
         id: upload
         run: |
+          FILE=${{ steps.getfile.outputs.file }}
           echo "📤 Uploading $FILE to Catbox..."
-          RESPONSE=$(curl -sF "reqtype=fileupload" -F "file=@$FILE" https://catbox.moe/user/api.php)
+          RESPONSE=$(curl -s -F "reqtype=fileupload" -F "file=@$FILE" https://catbox.moe/user/api.php)
           echo "Catbox response: $RESPONSE"
-          echo "upload_url=$RESPONSE" >> $GITHUB_OUTPUT
+          echo "url=$RESPONSE" >> $GITHUB_OUTPUT
 
-      - name: 📣 Send Discord notification v1.9
-        env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      - name: Send to Discord via curl webhook
         run: |
-          UPLOAD_URL="${{ steps.upload.outputs.upload_url }}"
-          MESSAGE_ID="${{ github.event.inputs.message_id }}"
-          echo "📣 Sending to Discord: ✅ Video uploaded: $UPLOAD_URL (reply to message ID: ${MESSAGE_ID:-none})"
-
-          if [ -z "$DISCORD_WEBHOOK_URL" ]; then
-            echo "❌ ERROR: DISCORD_WEBHOOK_URL is not set!"
-            exit 1
-          fi
-
-          curl -X POST -H "Content-Type: application/json" \
-            -d "{\"content\":\"✅ Video uploaded: $UPLOAD_URL\"}" \
-            "$DISCORD_WEBHOOK_URL"
+          curl -X POST "${{ secrets.DISCORD_WEBHOOK }}" \
+            -H 'Content-Type: application/json' \
+            -d "{\"content\":\"✅ Video uploaded: ${{ steps.upload.outputs.url }} (reply to message ID: ${{ github.event.inputs.message_id }})\"}"
