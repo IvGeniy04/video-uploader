@@ -1,60 +1,54 @@
-name: Upload Video v1.8
+name: upload_video
 
 on:
   workflow_dispatch:
     inputs:
-      url:
-        description: 'Video URL to download'
-        required: true
       message_id:
-        description: 'Discord message ID'
+        description: 'ID of the message to reply to'
         required: false
 
 jobs:
-  upload_video:
+  upload:
     runs-on: ubuntu-latest
-    env:
-      CATBOX_TOKEN: ${{ secrets.CATBOX_TOKEN }}
-      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - name: 🧾 Checkout
+        uses: actions/checkout@v4
 
-      - name: Setup yt-dlp with aria2 (cached) v1.8
-        uses: AnimMouse/setup-yt-dlp@v3
+      - name: 🛠 Setup Python
+        uses: actions/setup-python@v5
         with:
-          aria2: true
+          python-version: '3.12'
 
-      - name: Setup ffmpeg (cached)
-        uses: AnimMouse/setup-yt-dlp/ffmpeg@v3
+      - name: 🧩 Setup yt-dlp v3
+        uses: AnimMouse/setup-yt-dlp@v3
 
-      - name: Resolve final URL
-        id: resolve_url
-        run: |
-          FINAL_URL=$(curl -Ls -o /dev/null -w '%{url_effective}' "${{ github.event.inputs.url }}")
-          echo "Resolved final URL: $FINAL_URL"
-          echo "final_url=$FINAL_URL" >> $GITHUB_OUTPUT
-
-      - name: Download video with yt-dlp v1.8
-        run: |
-          echo "📥 Downloading from: '${{ steps.resolve_url.outputs.final_url }}'"
-          yt-dlp --verbose --format "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best" --merge-output-format mp4 --no-playlist -o "video.%(ext)s" "${{ steps.resolve_url.outputs.final_url }}"
-          ls -lh video.*
-
-      - name: Upload to Catbox v1.8
-        id: upload
+      - name: 🎥 Get video file
         run: |
           FILE=$(ls video.* | head -n1)
+          echo "Found video file: $FILE"
+          echo "FILE=$FILE" >> $GITHUB_ENV
+
+      - name: 📤 Upload to Catbox v1.9
+        id: upload
+        run: |
           echo "📤 Uploading $FILE to Catbox..."
-          RESPONSE=$(curl -sF "reqtype=fileupload" -F "fileToUpload=@$FILE" https://catbox.moe/user/api.php)
+          RESPONSE=$(curl -sF "reqtype=fileupload" -F "file=@$FILE" https://catbox.moe/user/api.php)
           echo "Catbox response: $RESPONSE"
           echo "upload_url=$RESPONSE" >> $GITHUB_OUTPUT
 
-      - name: Send Discord notification v1.8
+      - name: 📣 Send Discord notification v1.9
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
           UPLOAD_URL="${{ steps.upload.outputs.upload_url }}"
           MESSAGE_ID="${{ github.event.inputs.message_id }}"
           echo "📣 Sending to Discord: ✅ Video uploaded: $UPLOAD_URL (reply to message ID: ${MESSAGE_ID:-none})"
-          # Якщо потрібен reply, можна додати поле "message_reference", але тут простий пост
-          curl -X POST -H "Content-Type: application/json" -d "{\"content\":\"✅ Video uploaded: $UPLOAD_URL\"}" $DISCORD_WEBHOOK_URL
+
+          if [ -z "$DISCORD_WEBHOOK_URL" ]; then
+            echo "❌ ERROR: DISCORD_WEBHOOK_URL is not set!"
+            exit 1
+          fi
+
+          curl -X POST -H "Content-Type: application/json" \
+            -d "{\"content\":\"✅ Video uploaded: $UPLOAD_URL\"}" \
+            "$DISCORD_WEBHOOK_URL"
