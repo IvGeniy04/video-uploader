@@ -1,4 +1,4 @@
-name: Upload Video v1.7
+name: Upload Video v1.8
 
 on:
   workflow_dispatch:
@@ -16,18 +16,15 @@ jobs:
     env:
       CATBOX_TOKEN: ${{ secrets.CATBOX_TOKEN }}
       DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-      DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
-      DISCORD_GUILD_ID: ${{ secrets.DISCORD_GUILD_ID }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Setup yt-dlp with aria2 (cached) v1.7
+      - name: Setup yt-dlp with aria2 (cached) v1.8
         uses: AnimMouse/setup-yt-dlp@v3
         with:
           aria2: true
-        # Версія yt-dlp не вказана, щоб використовувався кеш або дефолтна, щоб уникнути помилок завантаження
 
       - name: Setup ffmpeg (cached)
         uses: AnimMouse/setup-yt-dlp/ffmpeg@v3
@@ -39,13 +36,13 @@ jobs:
           echo "Resolved final URL: $FINAL_URL"
           echo "final_url=$FINAL_URL" >> $GITHUB_OUTPUT
 
-      - name: Download video with yt-dlp v1.7
+      - name: Download video with yt-dlp v1.8
         run: |
           echo "📥 Downloading from: '${{ steps.resolve_url.outputs.final_url }}'"
           yt-dlp --verbose --format "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best" --merge-output-format mp4 --no-playlist -o "video.%(ext)s" "${{ steps.resolve_url.outputs.final_url }}"
           ls -lh video.*
 
-      - name: Upload to Catbox v1.7
+      - name: Upload to Catbox v1.8
         id: upload
         run: |
           FILE=$(ls video.* | head -n1)
@@ -54,8 +51,10 @@ jobs:
           echo "Catbox response: $RESPONSE"
           echo "upload_url=$RESPONSE" >> $GITHUB_OUTPUT
 
-      - name: Send Discord notification v1.7
+      - name: Send Discord notification v1.8
         run: |
-          CONTENT="✅ Video uploaded: ${{ steps.upload.outputs.upload_url }}"
-          echo "📣 Sending to Discord: $CONTENT (reply to message ID: ${{ github.event.inputs.message_id || 'none' }})"
-          curl -X POST -H "Content-Type: application/json" -d "{\"content\":\"$CONTENT\"}" $DISCORD_WEBHOOK_URL
+          UPLOAD_URL="${{ steps.upload.outputs.upload_url }}"
+          MESSAGE_ID="${{ github.event.inputs.message_id }}"
+          echo "📣 Sending to Discord: ✅ Video uploaded: $UPLOAD_URL (reply to message ID: ${MESSAGE_ID:-none})"
+          # Якщо потрібен reply, можна додати поле "message_reference", але тут простий пост
+          curl -X POST -H "Content-Type: application/json" -d "{\"content\":\"✅ Video uploaded: $UPLOAD_URL\"}" $DISCORD_WEBHOOK_URL
