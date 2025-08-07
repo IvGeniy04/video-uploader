@@ -1,4 +1,5 @@
-name: Upload Video
+name: Upload Video v1.5
+
 on:
   workflow_dispatch:
     inputs:
@@ -14,10 +15,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Cache yt-dlp
+      - name: Cache yt-dlp cache directory
         uses: actions/cache@v4
         with:
           path: ~/.cache/yt-dlp
@@ -25,52 +25,37 @@ jobs:
           restore-keys: |
             yt-dlp-cache-${{ runner.os }}-
 
-      - name: Set URL variable
-        id: vars
-        run: |
-          FINAL_URL=$(curl -Ls -o /dev/null -w '%{url_effective}' "${{ github.event.inputs.url }}")
-          echo "FINAL_URL=$FINAL_URL" >> $GITHUB_ENV
-          echo "✅ Resolved final URL: $FINAL_URL"
-
-      - name: Clean previous videos
-        run: rm -f video.*
-
-      - name: Setup yt-dlp (with aria2)
+      - name: Setup yt-dlp with aria2
         uses: AnimMouse/setup-yt-dlp@v3
         with:
           version: stable
           aria2: true
 
-      - name: Download video with audio (best format)
-        id: download
+      - name: Download video
         run: |
+          FINAL_URL=$(curl -Ls -o /dev/null -w '%{url_effective}' "${{ github.event.inputs.url }}")
           echo "📥 Downloading from: $FINAL_URL"
           yt-dlp --verbose --format "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best" --merge-output-format mp4 --no-playlist -o "video.%(ext)s" "$FINAL_URL"
-          ls -lh video.*
+          ls -lah video.*
+
+      - name: Upload video to Catbox
+        run: |
           FILE=$(ls video.* | head -n1)
-          echo "FILE=$FILE" >> $GITHUB_ENV
-          echo "✅ Downloaded file: $FILE"
-
-      - name: Upload to Catbox
-        id: upload
-        run: |
-          echo "🧾 Current directory files:"
-          ls -lh
           echo "📤 Uploading $FILE to Catbox..."
-          if [[ ! -f "$FILE" ]]; then
-            echo "❌ ERROR: File '$FILE' not found!"
-            exit 1
-          fi
-          URL=$(curl -s -F "reqtype=fileupload" -F "file=@$FILE" https://catbox.moe/user/api.php)
-          echo "URL=$URL" >> $GITHUB_OUTPUT
-          echo "✅ Uploaded URL: $URL"
-          rm -f "$FILE"
+          RESPONSE=$(curl -F "reqtype=fileupload" -F "fileToUpload=@$FILE" https://catbox.moe/user/api.php)
+          echo "✅ Uploaded URL: $RESPONSE"
+          echo "::set-output name=url::$RESPONSE"
 
-      - name: Send result to Discord
-        if: success()
+      - name: Send Discord message
         run: |
-          CONTENT="✅ Video uploaded: ${{ steps.upload.outputs.URL }}"
-          echo "📣 Sending to Discord: $CONTENT (reply to message ID: ${{ github.event.inputs.message_id || 'none' }})"
-          curl -X POST -H "Content-Type: application/json" \
-            -d "{\"content\": \"$CONTENT\", \"message_reference\": {\"message_id\": \"${{ github.event.inputs.message_id || '' }}\"}}" \
-            https://discord.com/api/webhooks/YOUR_WEBHOOK_URL_HERE
+          UPLOAD_URL="${{ steps.upload.outputs.url }}"
+          MESSAGE="✅ Video uploaded: $UPLOAD_URL"
+          if [ -n "${{ github.event.inputs.message_id }}" ]; then
+            MESSAGE="✅ Video uploaded: $UPLOAD_URL (повідомлення: https://discord.com/channels/YOUR_SERVER_ID/YOUR_CHANNEL_ID/${{ github.event.inputs.message_id }})"
+          fi
+          echo "📣 Sending to Discord: $MESSAGE"
+          curl -H "Authorization: Bot ${{ secrets.DISCORD_BOT_TOKEN }}" \
+               -H "Content-Type: application/json" \
+               -X POST \
+               -d "{\"content\":\"$MESSAGE\"}" \
+               "https://discord.com/api/v10/channels/YOUR_CHANNEL_ID/messages"
