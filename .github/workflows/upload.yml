@@ -61,20 +61,24 @@ jobs:
 
           echo "🔍 Processing: $VIDEO_URL"
 
-          # Для Telegram — спеціальний User-Agent
+          # Для Pinterest — обов’язково use_webpage
+          if [[ "$VIDEO_URL" == *"pinterest"* || "$VIDEO_URL" == *"pin.it"* ]]; then
+            EXTRA_ARGS="--extractor-args 'pinterest:use_webpage=True' --user-agent 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'"
+            ALLOW_UNPLAYABLE="--allow-unplayable-formats"
+          else
+            EXTRA_ARGS=""
+            ALLOW_UNPLAYABLE=""
+          fi
+
+          # Для Telegram — свій User-Agent
           if [[ "$VIDEO_URL" == *"t.me"* ]]; then
             USER_AGENT="Mozilla/5.0 (compatible; TelegramBot)"
           else
             USER_AGENT="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
           fi
 
-          # Для Pinterest — use_webpage
-          if [[ "$VIDEO_URL" == *"pinterest"* || "$VIDEO_URL" == *"pin.it"* ]]; then
-            EXTRA_ARGS="--extractor-args 'pinterest:use_webpage=True'"
-          fi
-
           # Отримуємо інформацію
-          INFO=$(yt-dlp --dump-json $EXTRA_ARGS --user-agent "$USER_AGENT" --no-check-certificate "$VIDEO_URL" 2>/dev/null)
+          INFO=$(yt-dlp $EXTRA_ARGS $ALLOW_UNPLAYABLE --dump-json --user-agent "$USER_AGENT" --no-check-certificate "$VIDEO_URL" 2>/dev/null)
           if [ -z "$INFO" ]; then
             echo "❌ No info — trying direct download"
           else
@@ -88,6 +92,7 @@ jobs:
           # Завантажуємо і вивантажуємо
           OUTPUT_LINK=$(yt-dlp \
             $EXTRA_ARGS \
+            $ALLOW_UNPLAYABLE \
             --user-agent "$USER_AGENT" \
             --no-check-certificate \
             --format "best[ext=mp4]" \
