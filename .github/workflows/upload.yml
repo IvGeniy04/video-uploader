@@ -38,75 +38,79 @@ jobs:
           chmod +x ~/.local/bin/yt-dlp
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Cache ffmpeg
-        uses: actions/cache@v3
-        with:
-          path: /usr/local/bin/ffmpeg
-          key: ffmpeg-6.0
-
-      - name: Install ffmpeg (if not cached)
-        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
-        run: |
-          sudo apt update && sudo apt install -y ffmpeg
-
       - name: Install requests
         run: |
           pip install requests
 
-      - name: Download and upload video
+      - name: Check and upload video
         id: catbox
         run: |
-          MAX_SIZE_BYTES=$((180 * 1024 * 1024))
+          # Очищаємо URL
           VIDEO_URL="${{ inputs.url }}"
+          VIDEO_URL=$(echo "$VIDEO_URL" | xargs)
+          MAX_SIZE_BYTES=$((180 * 1024 * 1024))  # 180 MB
 
-          echo "🔍 Processing: $VIDEO_URL"
-
-          # Для Pinterest — обов’язково use_webpage
-          if [[ "$VIDEO_URL" == *"pinterest"* || "$VIDEO_URL" == *"pin.it"* ]]; then
-            EXTRA_ARGS="--extractor-args 'pinterest:use_webpage=True' --user-agent 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'"
-            ALLOW_UNPLAYABLE="--allow-unplayable-formats"
-          else
-            EXTRA_ARGS=""
-            ALLOW_UNPLAYABLE=""
-          fi
-
-          # Для Telegram — свій User-Agent
-          if [[ "$VIDEO_URL" == *"t.me"* ]]; then
-            USER_AGENT="Mozilla/5.0 (compatible; TelegramBot)"
-          else
-            USER_AGENT="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-          fi
-
-          # Отримуємо інформацію
-          INFO=$(yt-dlp $EXTRA_ARGS $ALLOW_UNPLAYABLE --dump-json --user-agent "$USER_AGENT" --no-check-certificate "$VIDEO_URL" 2>/dev/null)
-          if [ -z "$INFO" ]; then
-            echo "❌ No info — trying direct download"
-          else
-            FILESIZE=$(echo "$INFO" | python3 -c "import sys, json; print(json.load(sys.stdin).get('filesize', 0))")
-            if [ "$FILESIZE" -gt "$MAX_SIZE_BYTES" ] && [ "$FILESIZE" -gt 0 ]; then
-              echo "❌ Too large"
-              exit 1
-            fi
-          fi
-
-          # Завантажуємо і вивантажуємо
-          OUTPUT_LINK=$(yt-dlp \
-            $EXTRA_ARGS \
-            $ALLOW_UNPLAYABLE \
-            --user-agent "$USER_AGENT" \
+          echo "🔍 Отримання інформації про відео: $VIDEO_URL"
+          
+          # Отримуємо інформацію для перевірки розміру
+          INFO=$(yt-dlp \
+            --dump-json \
+            --allow-unplayable-formats \
+            --extractor-args "pinterest:use_webpage=True" \
+            --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36" \
             --no-check-certificate \
-            --format "best[ext=mp4]" \
+            "$VIDEO_URL" 2>/dev/null)
+
+          if [ -z "$INFO" ]; then
+            echo "❌ Не вдалося отримати інформацію про відео"
+            if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ]; then
+              curl -X POST -H "Content-Type: application/json" \
+                -d '{"content": "❌ Не вдалося отримати відео для message ${{ inputs.message_id }}"}' \
+                ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
+            fi
+            exit 1
+          fi
+
+          FILESIZE=$(echo "$INFO" | python3 -c "import sys, json; print(json.load(sys.stdin).get('filesize', 0))")
+
+          if [ -z "$FILESIZE" ] || [ "$FILESIZE" -eq 0 ]; then
+            echo "⚠️ Розмір невідомий — пробуємо завантажити..."
+          elif [ "$FILESIZE" -gt "$MAX_SIZE_BYTES" ]; then
+            echo "❌ Відео занадто велике: більше 180 MB"
+            if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ]; then
+              curl -X POST -H "Content-Type: application/json" \
+                -d '{"content": "❌ Відео занадто велике (макс. 180 МБ) для message ${{ inputs.message_id }}"}' \
+                ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
+            fi
+            exit 1
+          fi
+
+          echo "📥 Завантаження та вивантаження на Catbox..."
+          
+          # Завантажуємо і одразу вивантажуємо
+          OUTPUT_LINK=$(yt-dlp \
             --merge-output-format mp4 \
+            --allow-unplayable-formats \
+            --extractor-args "pinterest:use_webpage=True" \
+            --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36" \
+            --no-check-certificate \
             --output - \
             "$VIDEO_URL" | \
-            curl -f -s -H "Expect:" \
+            curl -H "Expect:" \
             -F "reqtype=fileupload" \
             -F "fileToUpload=@-;filename=video.mp4;type=video/mp4" \
             https://catbox.moe/user/api.php)
 
-          if [[ "$OUTPUT_LINK" =~ ^https://files\.catbox\.moe/.*\.(mp4|webm)$ ]]; then
+          if [[ "$OUTPUT_LINK" =~ ^https:// ]]; then
+            echo "✅ Успішно: $OUTPUT_LINK"
             echo "link=$OUTPUT_LINK" >> $GITHUB_OUTPUT
           else
+            echo "❌ Помилка вивантаження: $OUTPUT_LINK"
+            if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ]; then
+              curl -X POST -H "Content-Type: application/json" \
+                -d '{"content": "❌ Не вдалося вивантажити на Catbox для message ${{ inputs.message_id }}"}' \
+                ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
+            fi
             exit 1
           fi
 
@@ -114,8 +118,8 @@ jobs:
         if: success()
         run: |
           MESSAGE_ID="${{ inputs.message_id }}"
-          if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ] && [ -n "$MESSAGE_ID" ]; then
+          if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ]; then
             curl -X POST -H "Content-Type: application/json" \
-            -d "{\"content\": \"🔗 Result for message $MESSAGE_ID: ${{ steps.catbox.outputs.link }}\"}" \
+            -d '{"content": "🔗 Result for message '"$MESSAGE_ID"': ${{ steps.catbox.outputs.link }}"}' \
             ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
           fi
