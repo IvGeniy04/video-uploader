@@ -1,105 +1,55 @@
-name: Upload Video
+name: Fast Social Video Download
 
 on:
   workflow_dispatch:
     inputs:
       url:
-        description: 'Video URL'
+        description: 'Video URL (Telegram, Facebook, TikTok, Pinterest, Instagram)'
         required: true
         type: string
       message_id:
-        description: 'Discord Message ID (optional)'
+        description: 'Discord message ID (optional)'
         required: false
         type: string
 
-env:
-  DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-
 jobs:
-  download:
+  process:
     runs-on: ubuntu-latest
 
     steps:
-      - name: ⬇️ Checkout
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: 📦 Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-          cache: 'pip'
+      - name: Setup yt-dlp + FFmpeg
+        uses: AnimMouse/setup-yt-dlp@v3
 
-      - name: 💾 Cache aria2 and yt-dlp
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/yt-dlp
-            ~/.cache/aria2
-          key: yt-dlp-aria2-${{ runner.os }}-${{ hashFiles('**/upload.yml') }}
-
-      - name: 🛠️ Install dependencies
+      - name: Determine URL redirect
+        id: resolve
         run: |
-          pip install --upgrade pip
-          pip install yt-dlp requests
+          FINAL=$(curl -Ls -o /dev/null -w '%{url_effective}' "${{ github.event.inputs.url }}")
+          echo "FINAL_URL=$FINAL" >> $GITHUB_ENV
 
-      - name: ⚙️ Download video
-        id: download_step
+      - name: Download + merge video
+        id: download
         run: |
-          URL="${{ github.event.inputs.url }}"
-          echo "Downloading from $URL..."
+          echo "Downloading from $FINAL_URL"
+          yt-dlp --verbose --format "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best" \
+            --merge-output-format mp4 -o video.%(ext)s "$FINAL_URL"
+          echo "FILE=$(ls video.* | head -n1)" >> $GITHUB_ENV
 
-          # Перевірка: чи Pinterest — бо часто без звуку
-          if echo "$URL" | grep -qE 'pin\.it|pinterest\.com'; then
-            yt-dlp --verbose --retries 2 --fragment-retries 2 \
-              --downloader aria2c \
-              --merge-output-format mp4 \
-              -f 'bestvideo+bestaudio/best' \
-              -o 'video.%(ext)s' \
-              "$URL" || {
-                echo "❌ Pinterest fallback to best"
-                yt-dlp --verbose --retries 2 --fragment-retries 2 \
-                  --downloader aria2c \
-                  --merge-output-format mp4 \
-                  -f best \
-                  -o 'video.%(ext)s' \
-                  "$URL"
-              }
-          else
-            yt-dlp --verbose --retries 2 --fragment-retries 2 \
-              --downloader aria2c \
-              --merge-output-format mp4 \
-              -f 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best' \
-              -o 'video.%(ext)s' \
-              "$URL"
+      - name: Upload to Catbox
+        id: upload
+        run: |
+          echo "Uploading $FILE"
+          LINK=$(curl -s -H "Expect:" -F "reqtype=fileupload" -F "file=@$FILE" https://catbox.moe/user/api.php)
+          echo "link=$LINK" >> $GITHUB_OUTPUT
+          rm -f "$FILE"
+
+      - name: Send to Discord
+        if: steps.upload.outputs.link
+        run: |
+          CONTENT="Завантажено відео: ${{ steps.upload.outputs.link }}"
+          if [ -n "${{ github.event.inputs.message_id }}" ]; then
+            CONTENT="$CONTENT (reply to message ${{ github.event.inputs.message_id }})"
           fi
-
-          echo "Downloaded file:"
-          ls -lh video.*
-
-      - name: 📤 Upload to Catbox
-        id: upload_step
-        run: |
-          FILE=$(ls video.* | head -n1)
-          echo "Uploading $FILE to catbox..."
-          RESPONSE=$(curl -s -F "reqtype=fileupload" -F "file=@$FILE" https://catbox.moe/user/api.php)
-          echo "Response: $RESPONSE"
-          echo "file_url=$RESPONSE" >> "$GITHUB_OUTPUT"
-
-      - name: 📡 Send to Discord
-        if: success()
-        run: |
-          WEBHOOK="$DISCORD_WEBHOOK_URL"
-          URL="${{ steps.upload_step.outputs.file_url }}"
-          MESSAGE_ID="${{ github.event.inputs.message_id }}"
-          
-          if [ -n "$MESSAGE_ID" ]; then
-            LINK="https://discord.com/channels/YOUR_SERVER_ID/YOUR_CHANNEL_ID/$MESSAGE_ID"
-            CONTENT="**🎥 Обробка завершена**\n🔗 Повідомлення: $LINK\n📁 Завантажено: $URL"
-          else
-            CONTENT="**🎥 Обробка завершена**\n📁 Завантажено: $URL"
-          fi
-          
-          curl -X POST "$WEBHOOK" \
-            -H "Content-Type: application/json" \
-            -d "{\"content\": \"$CONTENT\"}"
-
+          curl -H "Content-Type: application/json" -X POST -d "{\"content\":\"$CONTENT\"}" ${{ secrets.DISCORD_WEBHOOK_URL }}
