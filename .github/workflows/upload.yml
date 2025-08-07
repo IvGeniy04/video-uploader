@@ -49,50 +49,31 @@ jobs:
         run: |
           sudo apt update && sudo apt install -y ffmpeg
 
-      - name: Install requests (cached pip)
+      - name: Install requests
         run: |
           pip install requests
-
-      - name: Warm up Facebook
-        if: contains(inputs.url, 'facebook.com') || contains(inputs.url, 'fb.watch')
-        run: |
-          curl -s -L -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
-            --max-time 30 "${{ inputs.url }}" > /dev/null 2>&1 || true
-          sleep 3
-
-      - name: Normalize Telegram URL
-        if: contains(inputs.url, 't.me')
-        run: |
-          echo "NORMALIZED_URL=$(echo '${{ inputs.url }}' | sed 's|https://t\.me/|https://telegram.org/|')" >> $GITHUB_ENV
-
-      - name: Set processing URL
-        run: |
-          echo "PROCESSING_URL=${{ inputs.url }}" >> $GITHUB_ENV
-          if [ -n "$NORMALIZED_URL" ]; then
-            echo "PROCESSING_URL=$NORMALIZED_URL" >> $GITHUB_ENV
-          fi
 
       - name: Download and upload video
         id: catbox
         run: |
           MAX_SIZE_BYTES=$((180 * 1024 * 1024))
-          VIDEO_URL="$PROCESSING_URL"
+          VIDEO_URL="${{ inputs.url }}"
 
           echo "🔍 Processing: $VIDEO_URL"
 
-          # Для Pinterest — обов’язково use_webpage
-          if [[ "$VIDEO_URL" == *"pinterest"* || "$VIDEO_URL" == *"pin.it"* ]]; then
-            EXTRA_ARGS="--extractor-args 'pinterest:use_webpage=True'"
-          fi
-
-          # Для Telegram — свій User-Agent
-          if [[ "$VIDEO_URL" == *"telegram.org"* ]]; then
+          # Для Telegram — спеціальний User-Agent
+          if [[ "$VIDEO_URL" == *"t.me"* ]]; then
             USER_AGENT="Mozilla/5.0 (compatible; TelegramBot)"
           else
             USER_AGENT="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
           fi
 
-          # Перевірка розміру
+          # Для Pinterest — use_webpage
+          if [[ "$VIDEO_URL" == *"pinterest"* || "$VIDEO_URL" == *"pin.it"* ]]; then
+            EXTRA_ARGS="--extractor-args 'pinterest:use_webpage=True'"
+          fi
+
+          # Отримуємо інформацію
           INFO=$(yt-dlp --dump-json $EXTRA_ARGS --user-agent "$USER_AGENT" --no-check-certificate "$VIDEO_URL" 2>/dev/null)
           if [ -z "$INFO" ]; then
             echo "❌ No info — trying direct download"
@@ -104,7 +85,7 @@ jobs:
             fi
           fi
 
-          # Завантаження та вивантаження
+          # Завантажуємо і вивантажуємо
           OUTPUT_LINK=$(yt-dlp \
             $EXTRA_ARGS \
             --user-agent "$USER_AGENT" \
