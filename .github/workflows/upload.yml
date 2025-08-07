@@ -1,81 +1,74 @@
-name: Upload Video
+name: Upload Video with Sound
 
 on:
   workflow_dispatch:
     inputs:
       url:
-        description: 'Video URL'
+        description: 'Video URL (Tg/Fb/TikTok/Pinterest/Instagram)'
         required: true
         type: string
       message_id:
-        description: 'Discord message ID'
-        required: true
+        description: 'Discord message ID (reply)'
+        required: false
         type: string
 
 jobs:
   download-upload:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
+      - name: Setup yt-dlp with FFmpeg
+        uses: AnimMouse/setup-yt-dlp@v3
 
-      - name: Set up yt-dlp cache
-        id: yt-dlp-cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/yt-dlp
-          key: yt-dlp-cache
-
-      - name: Install yt-dlp
-        run: pip install -U yt-dlp
-
-      - name: Set URL env
+      - name: Resolve final URL
+        id: resolve
         run: |
-          echo "FINAL_URL=${{ github.event.inputs.url }}" >> $GITHUB_ENV
-          echo "MESSAGE_ID=${{ github.event.inputs.message_id }}" >> $GITHUB_ENV
+          URL="${{ github.event.inputs.url }}"
+          FINAL=$(curl -Ls -o /dev/null -w '%{url_effective}' "$URL")
+          echo "FINAL_URL=$FINAL" >> $GITHUB_ENV
 
-      - name: Download, merge and upload to Catbox
+      - name: Download, merge audio+video, upload, and clean up
         id: catbox
         run: |
-          echo "Downloading from: $FINAL_URL"
-
-          yt-dlp \
-            --retries 2 \
+          echo "Downloading from $FINAL_URL..."
+          yt-dlp --verbose --retries 2 --fragment-retries 2 \
+            --format "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best" \
             --merge-output-format mp4 \
-            --output "output.%(ext)s" \
-            "$FINAL_URL"
+            -o "video.%(ext)s" "$FINAL_URL"
 
-          FILE=$(ls output.* | head -n1)
-
+          FILE=$(ls video.* | head -n1)
           if [ ! -f "$FILE" ]; then
-            echo "❌ No video file downloaded"
+            echo "❌ No merged video file found"
             exit 1
           fi
 
-          echo "Uploading file: $FILE"
+          echo "Uploading $FILE to Catbox..."
+          LINK=$(curl -s -H "Expect:" \
+            -F "reqtype=fileupload" -F "fileToUpload=@$FILE" \
+            https://catbox.moe/user/api.php)
 
-          RESPONSE=$(curl -s -H "Expect:" -F "reqtype=fileupload" -F "fileToUpload=@$FILE" https://catbox.moe/user/api.php)
-
-          if [[ $RESPONSE == https://* ]]; then
-            echo "✅ Uploaded to Catbox: $RESPONSE"
-            echo "link=$RESPONSE" >> $GITHUB_OUTPUT
+          if [[ $LINK == https://* ]]; then
+            echo "link=$LINK" >> $GITHUB_OUTPUT
           else
-            echo "❌ Failed to upload to Catbox"
+            echo "❌ Upload failed: $LINK"
             exit 1
           fi
+
+          # Cleanup
+          rm -f video.*
 
       - name: Send to Discord
-        if: ${{ steps.catbox.outputs.link }}
+        if: steps.catbox.outputs.link
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
-          MESSAGE="✅ Завантажено відео: ${{ steps.catbox.outputs.link }} (відповідь на повідомлення ID: $MESSAGE_ID)"
-          curl -H "Content-Type: application/json" \
-               -X POST \
-               -d "{\"content\": \"$MESSAGE\"}" \
-               "$DISCORD_WEBHOOK"
+          LINK="${{ steps.catbox.outputs.link }}"
+          MSG_ID="${{ github.event.inputs.message_id }}"
+          CONTENT="✅ Завантажено відео — $LINK"
+          if [ -n "$MSG_ID" ]; then CONTENT="$CONTENT (replying to $MSG_ID)"; fi
+
+          curl -X POST -H "Content-Type: application/json" \
+            -d "{\"content\": \"$CONTENT\"}" \
+            "$DISCORD_WEBHOOK"
