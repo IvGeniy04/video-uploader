@@ -1,93 +1,95 @@
-name: Upload Social Videos
+name: Upload Video
 
 on:
   workflow_dispatch:
     inputs:
-      video_url:
+      url:
         description: 'Video URL'
         required: true
         type: string
+      message_id:
+        description: 'Discord Message ID (optional)'
+        required: false
+        type: string
+
+env:
+  DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
 
 jobs:
-  download-upload:
+  download:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: ⬇️ Checkout
         uses: actions/checkout@v4
 
-      - name: Cache tools
+      - name: 📦 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: 💾 Cache aria2 and yt-dlp
         uses: actions/cache@v4
         with:
           path: |
             ~/.cache/yt-dlp
-            ~/.cache/pip
-          key: tools-cache-v1
+            ~/.cache/aria2
+          key: yt-dlp-aria2-${{ runner.os }}-${{ hashFiles('**/upload.yml') }}
 
-      - name: Install dependencies
+      - name: 🛠️ Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg aria2
-          pip install -U yt-dlp
+          pip install --upgrade pip
+          pip install yt-dlp requests
 
-      - name: Determine source
-        id: source
+      - name: ⚙️ Download video
+        id: download_step
         run: |
-          URL="${{ github.event.inputs.video_url }}"
-          echo "URL=$URL" >> $GITHUB_ENV
-
-          if echo "$URL" | grep -q 't.me'; then
-            echo "site=telegram" >> $GITHUB_ENV
-          elif echo "$URL" | grep -q 'facebook.com'; then
-            echo "site=facebook" >> $GITHUB_ENV
-          elif echo "$URL" | grep -q 'tiktok.com'; then
-            echo "site=tiktok" >> $GITHUB_ENV
-          elif echo "$URL" | grep -q 'pinterest.com'; then
-            echo "site=pinterest" >> $GITHUB_ENV
-          elif echo "$URL" | grep -q 'instagram.com'; then
-            echo "site=instagram" >> $GITHUB_ENV
-          else
-            echo "Unsupported site"
-            exit 1
-          fi
-
-      - name: Download and process video
-        id: download
-        run: |
+          URL="${{ github.event.inputs.url }}"
           echo "Downloading from $URL..."
 
-          yt-dlp --verbose --retries 2 --fragment-retries 2 \
-            --format "bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo[ext=mp4]/best" \
-            --merge-output-format mp4 \
-            --downloader aria2c \
-            -o "video.%(ext)s" "$URL"
-
-          FILE=$(ls video.* | head -n1)
-          if [ ! -f "$FILE" ]; then
-            echo "❌ No video downloaded"
-            exit 1
+          # Перевірка: чи Pinterest — бо часто без звуку
+          if echo "$URL" | grep -qE 'pin\.it|pinterest\.com'; then
+            yt-dlp --verbose --retries 2 --fragment-retries 2 \
+              --downloader aria2c \
+              --merge-output-format mp4 \
+              -f 'bestvideo+bestaudio/best' \
+              -o 'video.%(ext)s' \
+              "$URL" || {
+                echo "❌ Pinterest fallback to best"
+                yt-dlp --verbose --retries 2 --fragment-retries 2 \
+                  --downloader aria2c \
+                  --merge-output-format mp4 \
+                  -f best \
+                  -o 'video.%(ext)s' \
+                  "$URL"
+              }
+          else
+            yt-dlp --verbose --retries 2 --fragment-retries 2 \
+              --downloader aria2c \
+              --merge-output-format mp4 \
+              -f 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best' \
+              -o 'video.%(ext)s' \
+              "$URL"
           fi
 
-          echo "FILE=$FILE" >> $GITHUB_ENV
+          echo "Downloaded file:"
+          ls -lh video.*
 
-      - name: Upload to Catbox
-        id: catbox
+      - name: 📤 Upload to Catbox
+        id: upload_step
         run: |
-          LINK=$(curl -s -H "Expect:" \
-            -F "reqtype=fileupload" \
-            -F "fileToUpload=@$FILE" \
-            https://catbox.moe/user/api.php)
+          FILE=$(ls video.* | head -n1)
+          echo "Uploading $FILE to catbox..."
+          RESPONSE=$(curl -s -F "reqtype=fileupload" -F "file=@$FILE" https://catbox.moe/user/api.php)
+          echo "Response: $RESPONSE"
+          echo "file_url=$RESPONSE" >> "$GITHUB_OUTPUT"
 
-          echo "Catbox link: $LINK"
-          echo "link=$LINK" >> $GITHUB_OUTPUT
-
-      - name: Send to Discord
+      - name: 📡 Send to Discord
         if: success()
         run: |
-          curl -H "Content-Type: application/json" \
-            -X POST \
-            -d "{\"content\": \"🎥 Залито з $site: ${{ steps.catbox.outputs.link }}\"}" \
-            ${{ secrets.DISCORD_WEBHOOK }}
-
-      - name: Clean up
-        run: rm -f video.*
+          curl -X POST "$DISCORD_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "content": "**🎥 Обробка завершена**\n${{ github.event.inputs.message_id && format("Повідомлення: https://discord.com/channels/YOUR_SERVER_ID/YOUR_CHANNEL_ID/{0}", github.event.inputs.message_id) || "" }}\n📁 Завантажено: '${{ steps.upload_step.outputs.file_url }}'"
+            }'
