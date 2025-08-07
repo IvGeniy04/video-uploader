@@ -16,30 +16,19 @@ jobs:
   upload:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
 
-      - name: Cache yt-dlp
-        uses: actions/cache@v3
-        with:
-          path: ~/.local/bin/yt-dlp
-          key: yt-dlp-latest
-
-      - name: Install yt-dlp (cached)
-        if: steps.cache-yt-dlp.outputs.cache-hit != 'true'
+      - name: Install ffmpeg
         run: |
-          mkdir -p ~/.local/bin
-          curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o ~/.local/bin/yt-dlp
-          chmod +x ~/.local/bin/yt-dlp
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          sudo apt update
+          sudo apt install -y ffmpeg
 
-      - name: Install requests
+      - name: Install dependencies
         run: |
+          pip install git+https://github.com/yt-dlp/yt-dlp.git
           pip install requests
 
       - name: Check and upload video
@@ -62,12 +51,7 @@ jobs:
             "$VIDEO_URL" 2>/dev/null)
 
           if [ -z "$INFO" ]; then
-            echo "❌ Не вдалося отримати інформацію про відео"
-            if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ]; then
-              curl -X POST -H "Content-Type: application/json" \
-                -d '{"content": "❌ Не вдалося отримати відео для message ${{ inputs.message_id }}"}' \
-                ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
-            fi
+            echo "type=error" >> $GITHUB_OUTPUT
             exit 1
           fi
 
@@ -77,7 +61,7 @@ jobs:
             echo "⚠️ Розмір невідомий — пробуємо завантажити..."
           elif [ "$FILESIZE" -gt "$MAX_SIZE_BYTES" ]; then
             echo "❌ Відео занадто велике: більше 180 MB"
-            if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ]; then
+            if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ] && [ -n "${{ inputs.message_id }}" ]; then
               curl -X POST -H "Content-Type: application/json" \
                 -d '{"content": "❌ Відео занадто велике (макс. 180 МБ) для message ${{ inputs.message_id }}"}' \
                 ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
@@ -106,7 +90,7 @@ jobs:
             echo "link=$OUTPUT_LINK" >> $GITHUB_OUTPUT
           else
             echo "❌ Помилка вивантаження: $OUTPUT_LINK"
-            if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ]; then
+            if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ] && [ -n "${{ inputs.message_id }}" ]; then
               curl -X POST -H "Content-Type: application/json" \
                 -d '{"content": "❌ Не вдалося вивантажити на Catbox для message ${{ inputs.message_id }}"}' \
                 ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
@@ -118,8 +102,13 @@ jobs:
         if: success()
         run: |
           MESSAGE_ID="${{ inputs.message_id }}"
-          if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ]; then
+          if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ] && [ -n "$MESSAGE_ID" ]; then
             curl -X POST -H "Content-Type: application/json" \
             -d '{"content": "🔗 Result for message '"$MESSAGE_ID"': ${{ steps.catbox.outputs.link }}"}' \
             ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
           fi
+
+      - name: Clean up
+        if: always()
+        run: |
+          rm -f video.mp4
