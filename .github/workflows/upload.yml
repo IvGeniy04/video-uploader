@@ -1,10 +1,10 @@
-name: Fast Social Video Processor
+name: Video Upload Workflow
 
 on:
   workflow_dispatch:
     inputs:
       url:
-        description: 'Video URL (Telegram, Facebook, TikTok, Pinterest, Instagram)'
+        description: 'Video URL'
         required: true
         type: string
       message_id:
@@ -13,58 +13,46 @@ on:
         type: string
 
 jobs:
-  process-video:
+  download-and-upload:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup yt-dlp with FFmpeg (fast & cached)
+      - name: Setup yt-dlp with cache
         uses: AnimMouse/setup-yt-dlp@v3
+        with:
+          cache: 'true'
 
-      - name: Log incoming URL
-        run: |
-          echo "🔗 URL: '${{ inputs.url }}'"
-          if [ -z "${{ inputs.message_id }}" ]; then
-            echo "🆔 Message ID: [none provided]"
-          else
-            echo "🆔 Message ID: '${{ inputs.message_id }}'"
-          fi
-
-      - name: Expand redirects
+      - name: Resolve final URL
         id: resolve
         run: |
-          FINAL=$(curl -Ls -o /dev/null -w '%{url_effective}' "${{ inputs.url }}")
-          echo "FINAL_URL=$FINAL" >> $GITHUB_ENV
-          echo "🔁 Resolved: $FINAL"
+          FINAL_URL=$(curl -Ls -o /dev/null -w '%{url_effective}' "${{ inputs.url }}")
+          echo "FINAL_URL=$FINAL_URL" >> $GITHUB_ENV
+          echo "✅ Resolved final URL: $FINAL_URL"
 
-      - name: Download with audio if available
+      - name: Download video with audio (best format)
         id: download
         run: |
-          echo "📥 Downloading from: '$FINAL_URL'"
-          yt-dlp --verbose \
-            --format "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best" \
-            --merge-output-format mp4 \
-            --no-playlist \
-            -o "video.%(ext)s" "$FINAL_URL"
-          echo "🧾 Downloaded files:"
+          echo "📥 Downloading from: $FINAL_URL"
+          yt-dlp --verbose --format "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best" --merge-output-format mp4 --no-playlist -o "video.%(ext)s" "$FINAL_URL"
           ls -lh video.*
+          FILE=$(ls video.* | head -n1)
+          echo "FILE=$FILE" >> $GITHUB_ENV
 
       - name: Upload to Catbox
         id: upload
         run: |
-          FILE=$(ls video.* | head -n1)
-          echo "📤 Uploading $FILE to catbox..."
-          LINK=$(curl -s -F "reqtype=fileupload" -F "file=@$FILE" https://catbox.moe/user/api.php)
-          echo "📦 Catbox URL: $LINK"
-          echo "link=$LINK" >> $GITHUB_OUTPUT
+          echo "📤 Uploading $FILE to Catbox..."
+          URL=$(curl -s -F "reqtype=fileupload" -F "file=@$FILE" https://catbox.moe/user/api.php)
+          echo "URL=$URL" >> $GITHUB_OUTPUT
+          echo "✅ Uploaded URL: $URL"
           rm -f video.*
 
       - name: Send message to Discord
-        if: steps.upload.outputs.link
         run: |
-          CONTENT="✅ Video uploaded: ${{ steps.upload.outputs.link }}"
+          CONTENT="✅ Video uploaded: ${{ steps.upload.outputs.URL }}"
           if [ -n "${{ inputs.message_id }}" ]; then
             CONTENT="$CONTENT (reply to message ID: ${{ inputs.message_id }})"
           fi
