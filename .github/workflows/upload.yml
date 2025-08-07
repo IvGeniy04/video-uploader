@@ -1,4 +1,4 @@
-name: Upload video
+name: Upload Video
 
 on:
   workflow_dispatch:
@@ -8,68 +8,47 @@ on:
         required: true
         type: string
       message_id:
-        description: 'Discord message ID (for reply)'
-        required: false
+        description: 'Discord message ID'
+        required: true
         type: string
 
 jobs:
-  download-and-upload:
+  download-upload:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.x'
 
-      - name: Cache yt-dlp and requirements
+      - name: Set up yt-dlp cache
+        id: yt-dlp-cache
         uses: actions/cache@v4
         with:
-          path: |
-            ~/.cache/pip
-            ~/.local/bin/yt-dlp
-          key: ${{ runner.os }}-yt-dlp-v1
+          path: ~/.cache/yt-dlp
+          key: yt-dlp-cache
 
       - name: Install yt-dlp
+        run: pip install -U yt-dlp
+
+      - name: Set URL env
         run: |
-          pip install --upgrade yt-dlp
-
-      - name: Resolve final URL
-        id: resolve
-        run: |
-          URL="${{ github.event.inputs.url }}"
-          FINAL_URL=$(curl -Ls -o /dev/null -w '%{url_effective}' "$URL")
-          echo "FINAL_URL=$FINAL_URL" >> $GITHUB_ENV
-          echo "Resolved final URL: $FINAL_URL"
-
-      - name: Detect source
-        id: source
-        run: |
-          HOST=$(echo "$FINAL_URL" | awk -F/ '{print $3}' | tr '[:upper:]' '[:lower:]')
-          echo "Detected host: $HOST"
-
-          case "$HOST" in
-            *t.me*) TYPE="telegram" ;;
-            *facebook.com*) TYPE="facebook" ;;
-            *tiktok.com*) TYPE="tiktok" ;;
-            *pinterest.com*) TYPE="pinterest" ;;
-            *instagram.com*) TYPE="instagram" ;;
-            *) echo "❌ Unsupported host: $HOST"; exit 1 ;;
-          esac
-
-          echo "source_type=$TYPE" >> $GITHUB_OUTPUT
-          echo "TYPE=$TYPE" >> $GITHUB_ENV
+          echo "FINAL_URL=${{ github.event.inputs.url }}" >> $GITHUB_ENV
+          echo "MESSAGE_ID=${{ github.event.inputs.message_id }}" >> $GITHUB_ENV
 
       - name: Download, merge and upload to Catbox
         id: catbox
         run: |
           echo "Downloading from: $FINAL_URL"
 
-          yt-dlp --retries 2 --fragment-retries 2 \
+          yt-dlp \
+            --retries 2 \
             --merge-output-format mp4 \
-            --output "output.%(ext)s" "$FINAL_URL"
+            --output "output.%(ext)s" \
+            "$FINAL_URL"
 
           FILE=$(ls output.* | head -n1)
 
@@ -80,33 +59,23 @@ jobs:
 
           echo "Uploading file: $FILE"
 
-          curl -s -H "Expect:" -F "reqtype=fileupload" \
-            -F "fileToUpload=@$FILE" \
-            https://catbox.moe/user/api.php > link.txt || exit 1
+          RESPONSE=$(curl -s -H "Expect:" -F "reqtype=fileupload" -F "fileToUpload=@$FILE" https://catbox.moe/user/api.php)
 
-          LINK=$(cat link.txt)
-          echo "Uploaded to Catbox: $LINK"
-          echo "link=$LINK" >> $GITHUB_OUTPUT
+          if [[ $RESPONSE == https://* ]]; then
+            echo "✅ Uploaded to Catbox: $RESPONSE"
+            echo "link=$RESPONSE" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Failed to upload to Catbox"
+            exit 1
+          fi
 
-
-      - name: Send result to Discord
+      - name: Send to Discord
         if: ${{ steps.catbox.outputs.link }}
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
-          MESSAGE_ID="${{ github.event.inputs.message_id }}"
-          LINK="${{ steps.catbox.outputs.link }}"
-          TYPE="${{ steps.source.outputs.source_type }}"
-
-          if [ -z "$DISCORD_WEBHOOK" ]; then
-            echo "❌ DISCORD_WEBHOOK secret not set!"
-            exit 1
-          fi
-
-          if [ -n "$MESSAGE_ID" ]; then
-            CONTENT="✅ Відео з $TYPE: $LINK (reply to $MESSAGE_ID)"
-          else
-            CONTENT="✅ Відео з $TYPE: $LINK"
-          fi
-
-          curl -H "Content-Type: application/json" -X POST -d "$(jq -n --arg content "$CONTENT" '{content: $content}')" "$DISCORD_WEBHOOK"
+          MESSAGE="✅ Завантажено відео: ${{ steps.catbox.outputs.link }} (відповідь на повідомлення ID: $MESSAGE_ID)"
+          curl -H "Content-Type: application/json" \
+               -X POST \
+               -d "{\"content\": \"$MESSAGE\"}" \
+               "$DISCORD_WEBHOOK"
