@@ -36,8 +36,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: 📦 Install dependencies
-        run: pip install -r requirements.txt
+      # ⛔️ Removed 'pip install -r requirements.txt' because the file is missing
 
       - name: 📥 Download video
         run: python scripts/download.py "${{ github.event.inputs.url }}"
@@ -46,7 +45,7 @@ jobs:
         run: |
           FILE=$(ls video.* | head -n1)
           echo "📤 Uploading $FILE to Catbox..."
-          RESPONSE=$(curl -F "reqtype=fileupload" -F "file=@$FILE" https://catbox.moe/user/api.php)
+          RESPONSE=$(curl -s -F "reqtype=fileupload" -F "file=@$FILE" https://catbox.moe/user/api.php)
           echo "Catbox response: $RESPONSE"
           echo "UPLOAD_URL=$RESPONSE" >> $GITHUB_ENV
 
