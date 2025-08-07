@@ -26,33 +26,38 @@ jobs:
       - name: Log incoming URL
         run: |
           echo "🔗 URL: '${{ inputs.url }}'"
-          echo "🆔 Message ID: '${{ inputs.message_id || "none" }}'"
+          if [ -z "${{ inputs.message_id }}" ]; then
+            echo "🆔 Message ID: [none provided]"
+          else
+            echo "🆔 Message ID: '${{ inputs.message_id }}'"
+          fi
 
       - name: Expand redirects
         id: resolve
         run: |
           FINAL=$(curl -Ls -o /dev/null -w '%{url_effective}' "${{ inputs.url }}")
           echo "FINAL_URL=$FINAL" >> $GITHUB_ENV
-          echo "Resolved: $FINAL"
+          echo "🔁 Resolved: $FINAL"
 
       - name: Download with audio if available
         id: download
         run: |
-          echo "Downloading from: $FINAL_URL"
+          echo "📥 Downloading from: '$FINAL_URL'"
           yt-dlp --verbose \
-            --format "bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo[ext=mp4]/best" \
+            --format "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best" \
             --merge-output-format mp4 \
+            --no-playlist \
             -o "video.%(ext)s" "$FINAL_URL"
-          echo "Downloaded files:"
+          echo "🧾 Downloaded files:"
           ls -lh video.*
 
       - name: Upload to Catbox
         id: upload
         run: |
           FILE=$(ls video.* | head -n1)
-          echo "Uploading $FILE..."
+          echo "📤 Uploading $FILE to catbox..."
           LINK=$(curl -s -F "reqtype=fileupload" -F "file=@$FILE" https://catbox.moe/user/api.php)
-          echo "Catbox URL: $LINK"
+          echo "📦 Catbox URL: $LINK"
           echo "link=$LINK" >> $GITHUB_OUTPUT
           rm -f video.*
 
@@ -63,7 +68,7 @@ jobs:
           if [ -n "${{ inputs.message_id }}" ]; then
             CONTENT="$CONTENT (reply to message ID: ${{ inputs.message_id }})"
           fi
-          echo "Sending to Discord: $CONTENT"
+          echo "📣 Sending to Discord: $CONTENT"
           curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
             -H "Content-Type: application/json" \
             -d "{\"content\":\"$CONTENT\"}"
