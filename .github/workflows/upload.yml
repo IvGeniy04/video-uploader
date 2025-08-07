@@ -1,15 +1,11 @@
-name: Upload Video with Sound
+name: Upload Social Videos
 
 on:
   workflow_dispatch:
     inputs:
-      url:
-        description: 'Video URL (Tg/Fb/TikTok/Pinterest/Instagram)'
+      video_url:
+        description: 'Video URL'
         required: true
-        type: string
-      message_id:
-        description: 'Discord message ID (reply)'
-        required: false
         type: string
 
 jobs:
@@ -17,59 +13,81 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Setup yt-dlp with FFmpeg
-        uses: AnimMouse/setup-yt-dlp@v3
+      - name: Cache tools
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/yt-dlp
+            ~/.cache/pip
+          key: tools-cache-v1
 
-      - name: Resolve final URL
-        id: resolve
+      - name: Install dependencies
         run: |
-          URL="${{ github.event.inputs.url }}"
-          FINAL=$(curl -Ls -o /dev/null -w '%{url_effective}' "$URL")
-          echo "FINAL_URL=$FINAL" >> $GITHUB_ENV
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg aria2
+          pip install -U yt-dlp
 
-- name: Download, merge audio+video, upload, and clean up
-  id: catbox
-  run: |
-    echo "Downloading from $FINAL_URL..."
+      - name: Determine source
+        id: source
+        run: |
+          URL="${{ github.event.inputs.video_url }}"
+          echo "URL=$URL" >> $GITHUB_ENV
 
-    yt-dlp --verbose --retries 2 --fragment-retries 2 \
-      --format "bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo[ext=mp4]/best" \
-      --merge-output-format mp4 \
-      -o "video.%(ext)s" "$FINAL_URL"
+          if echo "$URL" | grep -q 't.me'; then
+            echo "site=telegram" >> $GITHUB_ENV
+          elif echo "$URL" | grep -q 'facebook.com'; then
+            echo "site=facebook" >> $GITHUB_ENV
+          elif echo "$URL" | grep -q 'tiktok.com'; then
+            echo "site=tiktok" >> $GITHUB_ENV
+          elif echo "$URL" | grep -q 'pinterest.com'; then
+            echo "site=pinterest" >> $GITHUB_ENV
+          elif echo "$URL" | grep -q 'instagram.com'; then
+            echo "site=instagram" >> $GITHUB_ENV
+          else
+            echo "Unsupported site"
+            exit 1
+          fi
 
-    FILE=$(ls video.* | head -n1)
-    if [ ! -f "$FILE" ]; then
-      echo "❌ No merged or standalone video file found"
-      exit 1
-    fi
+      - name: Download and process video
+        id: download
+        run: |
+          echo "Downloading from $URL..."
 
-    echo "Uploading $FILE to Catbox..."
-    LINK=$(curl -s -H "Expect:" \
-      -F "reqtype=fileupload" -F "fileToUpload=@$FILE" \
-      https://catbox.moe/user/api.php)
+          yt-dlp --verbose --retries 2 --fragment-retries 2 \
+            --format "bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo[ext=mp4]/best" \
+            --merge-output-format mp4 \
+            --downloader aria2c \
+            -o "video.%(ext)s" "$URL"
 
-    if [[ $LINK == https://* ]]; then
-      echo "link=$LINK" >> $GITHUB_OUTPUT
-    else
-      echo "❌ Upload failed: $LINK"
-      exit 1
-    fi
+          FILE=$(ls video.* | head -n1)
+          if [ ! -f "$FILE" ]; then
+            echo "❌ No video downloaded"
+            exit 1
+          fi
 
-    rm -f video.*
+          echo "FILE=$FILE" >> $GITHUB_ENV
 
+      - name: Upload to Catbox
+        id: catbox
+        run: |
+          LINK=$(curl -s -H "Expect:" \
+            -F "reqtype=fileupload" \
+            -F "fileToUpload=@$FILE" \
+            https://catbox.moe/user/api.php)
+
+          echo "Catbox link: $LINK"
+          echo "link=$LINK" >> $GITHUB_OUTPUT
 
       - name: Send to Discord
-        if: steps.catbox.outputs.link
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        if: success()
         run: |
-          LINK="${{ steps.catbox.outputs.link }}"
-          MSG_ID="${{ github.event.inputs.message_id }}"
-          CONTENT="✅ Завантажено відео — $LINK"
-          if [ -n "$MSG_ID" ]; then CONTENT="$CONTENT (replying to $MSG_ID)"; fi
+          curl -H "Content-Type: application/json" \
+            -X POST \
+            -d "{\"content\": \"🎥 Залито з $site: ${{ steps.catbox.outputs.link }}\"}" \
+            ${{ secrets.DISCORD_WEBHOOK }}
 
-          curl -X POST -H "Content-Type: application/json" \
-            -d "{\"content\": \"$CONTENT\"}" \
-            "$DISCORD_WEBHOOK"
+      - name: Clean up
+        run: rm -f video.*
