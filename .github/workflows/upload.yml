@@ -1,5 +1,5 @@
-# FINAL CORRECTED VERSION - 2-STEP DOWNLOAD/UPLOAD
-name: Video Uploader v4.0 (2-Step Sound Fix)
+# FINAL PROFESSIONAL VERSION v5.0 - Hybrid Scraper + yt-dlp
+name: Video Uploader v5.0 (Hybrid Fix)
 
 on:
   workflow_dispatch:
@@ -15,33 +15,56 @@ jobs:
   upload:
     runs-on: ubuntu-latest
     steps:
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
       - name: Install Dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y ffmpeg
           pip install --upgrade git+https://github.com/yt-dlp/yt-dlp.git
 
-      - name: Download and Merge Video
+      - name: Download Video (Hybrid Method)
         id: download
         run: |
           VIDEO_URL="${{ github.event.inputs.url }}"
           FILENAME="video.mp4"
+          DOWNLOAD_SUCCESS=false
+
           echo "Processing URL: $VIDEO_URL"
 
-          # This command downloads the video and audio and merges them on disk using ffmpeg.
-          # This is the most reliable method for HLS streams from Pinterest.
-          yt-dlp \
-            --format "b" \
-            --merge-output-format mp4 \
-            --output "$FILENAME" \
-            --no-check-certificate \
-            --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36" \
-            "$VIDEO_URL"
+          if [[ "$VIDEO_URL" == *"pinterest.com"* || "$VIDEO_URL" == *"pin.it"* ]]; then
+            echo "Pinterest URL detected. Attempting direct scrape method..."
+            PAGE_CONTENT=$(curl -s -L -A "Mozilla/5.0" "$VIDEO_URL")
+            DIRECT_URL=$(echo "$PAGE_CONTENT" | grep -o 'https://v\.pinimg\.com/[^"]*\.mp4' | head -n 1)
+
+            if [ -n "$DIRECT_URL" ]; then
+              echo "✅ Found direct MP4 URL: $DIRECT_URL"
+              curl -o "$FILENAME" -L "$DIRECT_URL"
+              DOWNLOAD_SUCCESS=true
+            else
+              echo "⚠️ Direct scrape failed. Falling back to yt-dlp for Pinterest."
+            fi
+          fi
+
+          if [ "$DOWNLOAD_SUCCESS" = false ]; then
+            echo "Using yt-dlp to download and merge..."
+            yt-dlp \
+              --format "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" \
+              --merge-output-format mp4 \
+              --output "$FILENAME" \
+              "$VIDEO_URL"
+          fi
           
           if [ -f "$FILENAME" ]; then
-            echo "✅ Download and merge successful."
+            echo "✅ Download successful."
             echo "filepath=$FILENAME" >> $GITHUB_OUTPUT
           else
-            echo "❌ Download failed."
+            echo "❌ All download methods failed."
             exit 1
           fi
 
@@ -50,7 +73,6 @@ jobs:
         run: |
           FILE_PATH="${{ steps.download.outputs.filepath }}"
           echo "Uploading $FILE_PATH to Catbox..."
-          
           OUTPUT_LINK=$(curl -s -F "reqtype=fileupload" -F "fileToUpload=@$FILE_PATH" https://catbox.moe/user/api.php)
 
           if [[ "$OUTPUT_LINK" =~ ^https:// ]]; then
