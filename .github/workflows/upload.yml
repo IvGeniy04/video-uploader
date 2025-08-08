@@ -1,124 +1,68 @@
-name: Upload Video to Catbox
+# FINAL CORRECTED VERSION - 2025-08-08
+name: Video Uploader v3.0 (Sound Fix)
 
 on:
   workflow_dispatch:
     inputs:
       url:
-        description: 'Video URL (TikTok, Instagram, Pinterest, etc.)'
+        description: 'Video URL'
         required: true
-        type: string
       message_id:
-        description: 'Discord Message ID for response tracking'
+        description: 'Discord Message ID'
         required: false
-        type: string
 
 jobs:
   upload:
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
-      - name: Install ffmpeg
+      - name: Install Dependencies
         run: |
-          sudo apt update
-          sudo apt install -y ffmpeg
+          sudo apt-get update && sudo apt-get install -y ffmpeg
+          pip install --upgrade git+https://github.com/yt-dlp/yt-dlp.git
 
-      - name: Install dependencies
-        run: |
-          pip install git+https://github.com/yt-dlp/yt-dlp.git
-          pip install requests
-
-      - name: Warm up Facebook
-        if: contains(inputs.url, 'facebook.com') || contains(inputs.url, 'fb.watch')
-        run: |
-          curl -s -L -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
-            --max-time 30 "${{ inputs.url }}" > /dev/null 2>&1 || true
-          sleep 3
-
-      - name: Check and upload video
+      - name: Download, Merge and Upload
         id: catbox
         run: |
-          # Очищаємо URL
           VIDEO_URL="${{ github.event.inputs.url }}"
-          VIDEO_URL=$(echo "$VIDEO_URL" | xargs)
-          MAX_SIZE_BYTES=$((180 * 1024 * 1024))  # 180 MB
+          echo "Processing URL: $VIDEO_URL"
 
-          echo "🔍 Отримання інформації про відео: $VIDEO_URL"
+          # The key is to force yt-dlp to merge the best video and audio into a single mp4 stream
+          # and pipe that directly to curl. This avoids saving to disk and fixes the sound issue.
+          # The problematic --allow-unplayable-formats flag is REMOVED.
           
-          # Отримуємо інформацію для перевірки розміру
-          INFO=$(yt-dlp \
-            --dump-json \
-            --allow-unplayable-formats \
-            --extractor-args "pinterest:use_webpage=True" \
-            --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
-            --no-check-certificate \
-            "$VIDEO_URL" 2>/dev/null)
-
-          if [ -z "$INFO" ]; then
-            echo "❌ Не вдалося отримати інформацію про відео"
-            if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ]; then
-              curl -X POST -H "Content-Type: application/json" \
-                -d '{"content": "❌ Не вдалося отримати відео для message ${{ github.event.inputs.message_id }}"}' \
-                ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
-            fi
-            exit 1
-          fi
-
-          FILESIZE=$(echo "$INFO" | python3 -c "import sys, json; print(json.load(sys.stdin).get('filesize', 0))")
-
-          if [ -z "$FILESIZE" ] || [ "$FILESIZE" -eq 0 ]; then
-            echo "⚠️ Розмір невідомий — пробуємо завантажити..."
-          elif [ "$FILESIZE" -gt "$MAX_SIZE_BYTES" ]; then
-            echo "❌ Відео занадто велике: більше 180 MB"
-            if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ]; then
-              curl -X POST -H "Content-Type: application/json" \
-                -d '{"content": "❌ Відео занадто велике (макс. 180 МБ) для message ${{ github.event.inputs.message_id }}"}' \
-                ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
-            fi
-            exit 1
-          fi
-
-          echo "📥 Завантаження та вивантаження на Catbox..."
-          
-          # Завантажуємо і одразу вивантажуємо
           OUTPUT_LINK=$(yt-dlp \
-            --retries 3 \
-            --fragment-retries 3 \
-            --sleep-interval 2 \
+            --format "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" \
             --merge-output-format mp4 \
-            --allow-unplayable-formats \
-            --extractor-args "pinterest:use_webpage=True" \
-            --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
             --no-check-certificate \
+            --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36" \
             --output - \
             "$VIDEO_URL" | \
-            curl -H "Expect:" \
-            -F "reqtype=fileupload" \
-            -F "fileToUpload=@-;filename=video.mp4;type=video/mp4" \
-            https://catbox.moe/user/api.php  )
+            curl -H "Expect:" -s -F "reqtype=fileupload" -F "fileToUpload=@-;filename=video.mp4" https://catbox.moe/user/api.php)
 
           if [[ "$OUTPUT_LINK" =~ ^https:// ]]; then
-            echo "✅ Успішно: $OUTPUT_LINK"
+            echo "✅ Success: $OUTPUT_LINK"
             echo "link=$OUTPUT_LINK" >> $GITHUB_OUTPUT
           else
-            echo "❌ Помилка вивантаження: $OUTPUT_LINK"
-            if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ]; then
-              curl -X POST -H "Content-Type: application/json" \
-                -d '{"content": "❌ Не вдалося вивантажити на Catbox для message ${{ github.event.inputs.message_id }}"}' \
-                ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
-            fi
+            echo "❌ Upload Failed: $OUTPUT_LINK"
             exit 1
           fi
 
-      - name: Send result to results channel
+      - name: Send Result to Discord
         if: success()
         run: |
           MESSAGE_ID="${{ github.event.inputs.message_id }}"
-          if [ "${{ secrets.DISCORD_RESULTS_WEBHOOK }}" != "" ] && [ -n "$MESSAGE_ID" ]; then
-            curl -X POST -H "Content-Type: application/json" \
+          if [ -n "$MESSAGE_ID" ]; then
+            curl -s -X POST -H "Content-Type: application/json" \
             -d '{"content": "🔗 Result for message '"$MESSAGE_ID"': ${{ steps.catbox.outputs.link }}"}' \
-            ${{ secrets.DISCORD_RESULTS_WEBHOOK }}
+            "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
+          fi
+      
+      - name: Notify on Failure
+        if: failure()
+        run: |
+          MESSAGE_ID="${{ github.event.inputs.message_id }}"
+          if [ -n "$MESSAGE_ID" ]; then
+            curl -s -X POST -H "Content-Type: application/json" \
+            -d '{"content": "❌ Failed to process URL for message '"$MESSAGE_ID"': ${{ github.event.inputs.url }}"}' \
+            "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
           fi
