@@ -53,28 +53,13 @@ jobs:
           FINAL_FILENAME="video.mp4"
 
           if [[ "$VIDEO_URL" == *"pinterest.com"* ]]; then
-            echo "Pinterest URL detected. Optimizing with gallery-dl..."
-            
-            # First, try to get the direct URL quickly
-            DIRECT_URL=$(gallery-dl --get-urls "$VIDEO_URL" | head -n 1)
-            
-            if [ -n "$DIRECT_URL" ]; then
-              echo "✅ Found direct URL: $DIRECT_URL"
-              echo "Handing over to yt-dlp for processing..."
-              yt-dlp \
-                --format "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" \
-                --merge-output-format mp4 \
-                --output "$FINAL_FILENAME" \
-                "$DIRECT_URL"
-            else
-              echo "⚠️ Could not get direct URL. Falling back to full gallery-dl download."
-              gallery-dl \
-                --verbose \
-                --no-check-certificate \
-                --download-archive archive.txt \
-                --filename "video.mp4" \
-                "$VIDEO_URL"
-            fi
+            echo "Pinterest URL detected. Using gallery-dl for robust download."
+            gallery-dl \
+              --verbose \
+              --no-check-certificate \
+              --download-archive archive.txt \
+              --filename "video.mp4" \
+              "$VIDEO_URL"
           else
             echo "Non-Pinterest URL. Using yt-dlp..."
             yt-dlp \
