@@ -1,5 +1,5 @@
-# FINAL PROFESSIONAL VERSION v5.0 - Hybrid Scraper + yt-dlp
-name: Video Uploader v5.0 (Hybrid Fix)
+# FINAL PROFESSIONAL VERSION v6.0 - gallery-dl for Pinterest
+name: Video Uploader v6.0 (gallery-dl Fix)
 
 on:
   workflow_dispatch:
@@ -15,44 +15,24 @@ jobs:
   upload:
     runs-on: ubuntu-latest
     steps:
-      - name: Cache dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
       - name: Install Dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y ffmpeg
-          pip install --upgrade git+https://github.com/yt-dlp/yt-dlp.git
+          pip install --upgrade git+https://github.com/yt-dlp/yt-dlp.git gallery-dl
 
-      - name: Download Video (Hybrid Method)
+      - name: Download Video (Specialized Method)
         id: download
         run: |
           VIDEO_URL="${{ github.event.inputs.url }}"
           FILENAME="video.mp4"
-          DOWNLOAD_SUCCESS=false
-
+          
           echo "Processing URL: $VIDEO_URL"
 
           if [[ "$VIDEO_URL" == *"pinterest.com"* || "$VIDEO_URL" == *"pin.it"* ]]; then
-            echo "Pinterest URL detected. Attempting direct scrape method..."
-            PAGE_CONTENT=$(curl -s -L -A "Mozilla/5.0" "$VIDEO_URL")
-            DIRECT_URL=$(echo "$PAGE_CONTENT" | grep -o 'https://v\.pinimg\.com/[^"]*\.mp4' | head -n 1)
-
-            if [ -n "$DIRECT_URL" ]; then
-              echo "✅ Found direct MP4 URL: $DIRECT_URL"
-              curl -o "$FILENAME" -L "$DIRECT_URL"
-              DOWNLOAD_SUCCESS=true
-            else
-              echo "⚠️ Direct scrape failed. Falling back to yt-dlp for Pinterest."
-            fi
-          fi
-
-          if [ "$DOWNLOAD_SUCCESS" = false ]; then
-            echo "Using yt-dlp to download and merge..."
+            echo "Pinterest URL detected. Using gallery-dl..."
+            gallery-dl --directory . --filename "$FILENAME" "$VIDEO_URL"
+          else
+            echo "Non-Pinterest URL. Using yt-dlp..."
             yt-dlp \
               --format "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" \
               --merge-output-format mp4 \
