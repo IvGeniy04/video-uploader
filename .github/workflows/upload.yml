@@ -60,8 +60,12 @@ jobs:
             
             if [ -n "$DIRECT_URL" ]; then
               echo "✅ Found direct URL: $DIRECT_URL"
-              echo "Downloading with curl..."
-              curl -L -o "$FINAL_FILENAME" "$DIRECT_URL"
+              echo "Handing over to yt-dlp for processing..."
+              yt-dlp \
+                --format "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" \
+                --merge-output-format mp4 \
+                --output "$FINAL_FILENAME" \
+                "$DIRECT_URL"
             else
               echo "⚠️ Could not get direct URL. Falling back to full gallery-dl download."
               gallery-dl \
