@@ -1,5 +1,5 @@
-# FINAL PROFESSIONAL VERSION v15.0 - pinterest-dl Syntax Fix
-name: Video Uploader v15.0 (pinterest-dl Syntax Fix)
+# FINAL PROFESSIONAL VERSION v16.0 - pinterest-dl Final Syntax Fix
+name: Video Uploader v16.0 (pinterest-dl Final Syntax Fix)
 
 on:
   workflow_dispatch:
@@ -37,8 +37,8 @@ jobs:
 
           if [[ "$VIDEO_URL" == *"pinterest.com"* || "$VIDEO_URL" == *"pin.it"* ]]; then
             echo "Pinterest URL detected. Using specialized pinterest-dl for speed..."
-            # Corrected syntax for pinterest-dl
-            pinterest-dl download -l "$VIDEO_URL" -o .
+            # Corrected syntax for pinterest-dl (removed -l)
+            pinterest-dl download "$VIDEO_URL" -o .
             DOWNLOADED_FILE=$(find . -maxdepth 1 -type f -name "*.mp4")
             
             if [ -s "$DOWNLOADED_FILE" ]; then
