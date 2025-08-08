@@ -1,5 +1,5 @@
-# FINAL PROFESSIONAL VERSION v6.0 - gallery-dl for Pinterest
-name: Video Uploader v6.0 (gallery-dl Fix)
+# FINAL PROFESSIONAL VERSION v7.0 - Robust Checks
+name: Video Uploader v7.0 (Robust Fix)
 
 on:
   workflow_dispatch:
@@ -30,7 +30,7 @@ jobs:
 
           if [[ "$VIDEO_URL" == *"pinterest.com"* || "$VIDEO_URL" == *"pin.it"* ]]; then
             echo "Pinterest URL detected. Using gallery-dl..."
-            gallery-dl --directory . --filename "$FILENAME" "$VIDEO_URL"
+            gallery-dl --verbose --directory . --filename "$FILENAME" "$VIDEO_URL"
           else
             echo "Non-Pinterest URL. Using yt-dlp..."
             yt-dlp \
@@ -40,11 +40,12 @@ jobs:
               "$VIDEO_URL"
           fi
           
-          if [ -f "$FILENAME" ]; then
-            echo "✅ Download successful."
+          # Check if the file was created and is not empty
+          if [ -s "$FILENAME" ]; then
+            echo "✅ Download successful. File size is greater than zero."
             echo "filepath=$FILENAME" >> $GITHUB_OUTPUT
           else
-            echo "❌ All download methods failed."
+            echo "❌ Download failed or resulted in an empty file."
             exit 1
           fi
 
@@ -53,13 +54,16 @@ jobs:
         run: |
           FILE_PATH="${{ steps.download.outputs.filepath }}"
           echo "Uploading $FILE_PATH to Catbox..."
-          OUTPUT_LINK=$(curl -s -F "reqtype=fileupload" -F "fileToUpload=@$FILE_PATH" https://catbox.moe/user/api.php)
+          # Removed -s from curl to make output visible for debugging
+          OUTPUT_LINK=$(curl -F "reqtype=fileupload" -F "fileToUpload=@$FILE_PATH" https://catbox.moe/user/api.php)
+
+          echo "Catbox API Response: $OUTPUT_LINK"
 
           if [[ "$OUTPUT_LINK" =~ ^https:// ]]; then
             echo "✅ Upload successful: $OUTPUT_LINK"
             echo "link=$OUTPUT_LINK" >> $GITHUB_OUTPUT
           else
-            echo "❌ Upload Failed: $OUTPUT_LINK"
+            echo "❌ Upload Failed. See response above."
             exit 1
           fi
 
