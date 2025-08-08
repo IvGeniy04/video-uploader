@@ -1,5 +1,5 @@
-# FINAL PROFESSIONAL VERSION v8.0 - Dynamic Filename
-name: Video Uploader v8.0 (Dynamic Filename Fix)
+# FINAL PROFESSIONAL VERSION v9.0 - JQ Parser + Cache
+name: Video Uploader v9.0 (JQ Parser + Cache)
 
 on:
   workflow_dispatch:
@@ -15,40 +15,59 @@ jobs:
   upload:
     runs-on: ubuntu-latest
     steps:
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }} # Using a non-existent file for a generic key
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
       - name: Install Dependencies
         run: |
-          sudo apt-get update && sudo apt-get install -y ffmpeg
+          sudo apt-get update && sudo apt-get install -y ffmpeg jq
           pip install --upgrade git+https://github.com/yt-dlp/yt-dlp.git gallery-dl
 
-      - name: Download Video (Specialized Method)
+      - name: Download Video (Optimized Hybrid Method)
         id: download
         run: |
           VIDEO_URL="${{ github.event.inputs.url }}"
-          
+          FILENAME="video.mp4"
+          DOWNLOAD_SUCCESS=false
+
           echo "Processing URL: $VIDEO_URL"
 
           if [[ "$VIDEO_URL" == *"pinterest.com"* || "$VIDEO_URL" == *"pin.it"* ]]; then
-            echo "Pinterest URL detected. Using gallery-dl..."
-            # Let gallery-dl decide the filename, don't specify it
-            gallery-dl --verbose --directory . "$VIDEO_URL"
-            # Find the downloaded file (it should be the only mp4)
-            DOWNLOADED_FILE=$(find . -maxdepth 1 -type f -name "*.mp4")
-          else
-            echo "Non-Pinterest URL. Using yt-dlp..."
-            DOWNLOADED_FILE="video.mp4"
+            echo "Pinterest URL detected. Attempting JQ scrape method..."
+            PAGE_CONTENT=$(curl -s -L -A "Mozilla/5.0" "$VIDEO_URL")
+            # Extract JSON from the page and parse it with JQ to find the highest quality video URL
+            DIRECT_URL=$(echo "$PAGE_CONTENT" | grep -o '<script id="initial-state" type="application/json">.*</script>' | sed 's/<script id="initial-state" type="application/json">//;s/<\/script>//' | jq -r '.. | .content.url? | select(. | contains("videos.pinimg.com"))' | tail -n 1)
+
+            if [ -n "$DIRECT_URL" ]; then
+              echo "✅ JQ method successful. Found direct URL: $DIRECT_URL"
+              curl -o "$FILENAME" -L "$DIRECT_URL"
+              DOWNLOAD_SUCCESS=true
+            else
+              echo "⚠️ JQ method failed. Falling back to gallery-dl..."
+              gallery-dl --verbose --directory . --filename "$FILENAME" "$VIDEO_URL"
+              DOWNLOAD_SUCCESS=true # Assume success, check file later
+            fi
+          fi
+
+          if [ "$DOWNLOAD_SUCCESS" = false ]; then
+            echo "Using yt-dlp for non-Pinterest URL..."
             yt-dlp \
               --format "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" \
               --merge-output-format mp4 \
-              --output "$DOWNLOADED_FILE" \
+              --output "$FILENAME" \
               "$VIDEO_URL"
           fi
           
-          # Check if the file was created and is not empty
-          if [ -s "$DOWNLOADED_FILE" ]; then
-            echo "✅ Download successful. File is '$DOWNLOADED_FILE' and size is greater than zero."
-            echo "filepath=$DOWNLOADED_FILE" >> $GITHUB_OUTPUT
+          if [ -s "$FILENAME" ]; then
+            echo "✅ Download successful. File size is greater than zero."
+            echo "filepath=$FILENAME" >> $GITHUB_OUTPUT
           else
-            echo "❌ Download failed or resulted in an empty file."
+            echo "❌ All download methods failed or resulted in an empty file."
             exit 1
           fi
 
@@ -58,9 +77,7 @@ jobs:
           FILE_PATH="${{ steps.download.outputs.filepath }}"
           echo "Uploading $FILE_PATH to Catbox..."
           OUTPUT_LINK=$(curl -F "reqtype=fileupload" -F "fileToUpload=@$FILE_PATH" https://catbox.moe/user/api.php)
-
           echo "Catbox API Response: $OUTPUT_LINK"
-
           if [[ "$OUTPUT_LINK" =~ ^https:// ]]; then
             echo "✅ Upload successful: $OUTPUT_LINK"
             echo "link=$OUTPUT_LINK" >> $GITHUB_OUTPUT
