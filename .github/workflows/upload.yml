@@ -1,5 +1,5 @@
-# FINAL PROFESSIONAL VERSION v9.0 - JQ Parser + Cache
-name: Video Uploader v9.0 (JQ Parser + Cache)
+# FINAL PROFESSIONAL VERSION v10.0 - Final Polish
+name: Video Uploader v10.0 (Final Polish)
 
 on:
   workflow_dispatch:
@@ -15,14 +15,6 @@ jobs:
   upload:
     runs-on: ubuntu-latest
     steps:
-      - name: Cache pip dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }} # Using a non-existent file for a generic key
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
       - name: Install Dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y ffmpeg jq
@@ -40,8 +32,8 @@ jobs:
           if [[ "$VIDEO_URL" == *"pinterest.com"* || "$VIDEO_URL" == *"pin.it"* ]]; then
             echo "Pinterest URL detected. Attempting JQ scrape method..."
             PAGE_CONTENT=$(curl -s -L -A "Mozilla/5.0" "$VIDEO_URL")
-            # Extract JSON from the page and parse it with JQ to find the highest quality video URL
-            DIRECT_URL=$(echo "$PAGE_CONTENT" | grep -o '<script id="initial-state" type="application/json">.*</script>' | sed 's/<script id="initial-state" type="application/json">//;s/<\/script>//' | jq -r '.. | .content.url? | select(. | contains("videos.pinimg.com"))' | tail -n 1)
+            # Simplified and more robust JSON extraction
+            DIRECT_URL=$(echo "$PAGE_CONTENT" | grep -o '<script id="initial-state" type="application/json">.*</script>' | sed -e 's,.*<script id="initial-state" type="application/json">,,;s,</script>,,' | jq -r '.. | .content.url? | select(. and contains("videos.pinimg.com"))' | tail -n 1)
 
             if [ -n "$DIRECT_URL" ]; then
               echo "✅ JQ method successful. Found direct URL: $DIRECT_URL"
@@ -50,7 +42,7 @@ jobs:
             else
               echo "⚠️ JQ method failed. Falling back to gallery-dl..."
               gallery-dl --verbose --directory . --filename "$FILENAME" "$VIDEO_URL"
-              DOWNLOAD_SUCCESS=true # Assume success, check file later
+              DOWNLOAD_SUCCESS=true
             fi
           fi
 
@@ -77,12 +69,12 @@ jobs:
           FILE_PATH="${{ steps.download.outputs.filepath }}"
           echo "Uploading $FILE_PATH to Catbox..."
           OUTPUT_LINK=$(curl -F "reqtype=fileupload" -F "fileToUpload=@$FILE_PATH" https://catbox.moe/user/api.php)
-          echo "Catbox API Response: $OUTPUT_LINK"
-          if [[ "$OUTPUT_LINK" =~ ^https:// ]]; then
+          echo "Catbox API Response: '$OUTPUT_LINK'"
+          if [[ -n "$OUTPUT_LINK" && "$OUTPUT_LINK" =~ ^https:// ]]; then
             echo "✅ Upload successful: $OUTPUT_LINK"
             echo "link=$OUTPUT_LINK" >> $GITHUB_OUTPUT
           else
-            echo "❌ Upload Failed. See response above."
+            echo "❌ Upload Failed. Response was empty or not a URL."
             exit 1
           fi
 
