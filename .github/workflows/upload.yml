@@ -1,5 +1,5 @@
-# FINAL PROFESSIONAL VERSION v7.0 - Robust Checks
-name: Video Uploader v7.0 (Robust Fix)
+# FINAL PROFESSIONAL VERSION v8.0 - Dynamic Filename
+name: Video Uploader v8.0 (Dynamic Filename Fix)
 
 on:
   workflow_dispatch:
@@ -24,26 +24,29 @@ jobs:
         id: download
         run: |
           VIDEO_URL="${{ github.event.inputs.url }}"
-          FILENAME="video.mp4"
           
           echo "Processing URL: $VIDEO_URL"
 
           if [[ "$VIDEO_URL" == *"pinterest.com"* || "$VIDEO_URL" == *"pin.it"* ]]; then
             echo "Pinterest URL detected. Using gallery-dl..."
-            gallery-dl --verbose --directory . --filename "$FILENAME" "$VIDEO_URL"
+            # Let gallery-dl decide the filename, don't specify it
+            gallery-dl --verbose --directory . "$VIDEO_URL"
+            # Find the downloaded file (it should be the only mp4)
+            DOWNLOADED_FILE=$(find . -maxdepth 1 -type f -name "*.mp4")
           else
             echo "Non-Pinterest URL. Using yt-dlp..."
+            DOWNLOADED_FILE="video.mp4"
             yt-dlp \
               --format "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" \
               --merge-output-format mp4 \
-              --output "$FILENAME" \
+              --output "$DOWNLOADED_FILE" \
               "$VIDEO_URL"
           fi
           
           # Check if the file was created and is not empty
-          if [ -s "$FILENAME" ]; then
-            echo "✅ Download successful. File size is greater than zero."
-            echo "filepath=$FILENAME" >> $GITHUB_OUTPUT
+          if [ -s "$DOWNLOADED_FILE" ]; then
+            echo "✅ Download successful. File is '$DOWNLOADED_FILE' and size is greater than zero."
+            echo "filepath=$DOWNLOADED_FILE" >> $GITHUB_OUTPUT
           else
             echo "❌ Download failed or resulted in an empty file."
             exit 1
@@ -54,7 +57,6 @@ jobs:
         run: |
           FILE_PATH="${{ steps.download.outputs.filepath }}"
           echo "Uploading $FILE_PATH to Catbox..."
-          # Removed -s from curl to make output visible for debugging
           OUTPUT_LINK=$(curl -F "reqtype=fileupload" -F "fileToUpload=@$FILE_PATH" https://catbox.moe/user/api.php)
 
           echo "Catbox API Response: $OUTPUT_LINK"
