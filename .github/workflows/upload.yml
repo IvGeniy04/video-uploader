@@ -1,5 +1,5 @@
-# FINAL PROFESSIONAL VERSION v21.0 - Scraper Fallback
-name: Video Uploader v21.0 (Scraper Fallback)
+# FINAL PROFESSIONAL VERSION v22.0 - Corrected Scraper
+name: Video Uploader v22.0 (Corrected Scraper)
 
 on:
   workflow_dispatch:
@@ -31,13 +31,12 @@ jobs:
         run: |
           VIDEO_URL="${{ github.event.inputs.url }}"
           FINAL_FILENAME="video.mp4"
-          DOWNLOAD_SUCCESS=false
-
+          
           if [[ "$VIDEO_URL" == *"pinterest.com"* || "$VIDEO_URL" == *"pin.it"* ]]; then
             echo "Pinterest URL detected. Using embedded Python scraper..."
             
-            # Correctly formatted embedded Python script
-            python3 -c '
+            # Create a temporary python script to avoid YAML syntax issues
+            cat << 'EOF' > scraper.py
 import requests, sys
 from bs4 import BeautifulSoup
 
@@ -64,11 +63,11 @@ try:
 except Exception as e:
     print(f"Scraper failed: {e}", file=sys.stderr)
     sys.exit(1)
-' "$VIDEO_URL" "$FINAL_FILENAME"
+EOF
+            
+            python3 scraper.py "$VIDEO_URL" "$FINAL_FILENAME"
 
-            if [ -s "$FINAL_FILENAME" ]; then
-                DOWNLOAD_SUCCESS=true
-            else
+            if [ ! -s "$FINAL_FILENAME" ]; then
                 echo "⚠️ Scraper method failed. Falling back to gallery-dl..."
                 gallery-dl --verbose --directory . "$VIDEO_URL"
                 DOWNLOADED_FILE=$(find . -maxdepth 1 -type f -name "*.mp4")
