@@ -1,5 +1,5 @@
-# FINAL PROFESSIONAL VERSION v13.0 - Rename File
-name: Video Uploader v13.0 (Rename Fix)
+# FINAL PROFESSIONAL VERSION v15.0 - Multi-Site Logic
+name: Video Uploader v15.0 (Multi-Site Logic)
 
 on:
   workflow_dispatch:
@@ -37,24 +37,39 @@ jobs:
           if [[ "$VIDEO_URL" == *"pinterest.com"* || "$VIDEO_URL" == *"pin.it"* ]]; then
             echo "Pinterest URL detected. Using gallery-dl..."
             gallery-dl --verbose --directory . "$VIDEO_URL"
-            # Find the downloaded file, whatever its name is
             DOWNLOADED_FILE=$(find . -maxdepth 1 -type f -name "*.mp4")
-            # Rename it to a standard name
             if [ -n "$DOWNLOADED_FILE" ]; then
               mv "$DOWNLOADED_FILE" "$FINAL_FILENAME"
             fi
           else
-            echo "Non-Pinterest URL. Using yt-dlp..."
+            echo "Non-Pinterest URL detected. Using yt-dlp with site-specific logic..."
+            YT_DLP_ARGS=""
+            if [[ "$VIDEO_URL" == *"facebook.com"* || "$VIDEO_URL" == *"fb.watch"* ]]; then
+              echo "Facebook URL detected. Warming up link and setting User-Agent."
+              curl -s -L -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" --max-time 15 "$VIDEO_URL" > /dev/null 2>&1 || true
+              sleep 2
+              YT_DLP_ARGS="--user-agent 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'"
+            elif [[ "$VIDEO_URL" == *"t.me"* ]]; then
+              echo "Telegram URL detected. Setting User-Agent."
+              YT_DLP_ARGS="--user-agent 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36'"
+            else
+              echo "Generic URL (TikTok, Instagram, etc.). Using standard download."
+            fi
+
             yt-dlp \
               --format "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" \
               --merge-output-format mp4 \
               --output "$FINAL_FILENAME" \
+              $YT_DLP_ARGS \
               "$VIDEO_URL"
           fi
           
           if [ -s "$FINAL_FILENAME" ]; then
             echo "✅ Download successful. File is '$FINAL_FILENAME' and size is greater than zero."
-            echo "filepath=$FINAL_FILENAME" >> $GITHUB_OUTPUT
+            UNIQUE_FILENAME="video-final.mp4"
+            ffmpeg -i "$FINAL_FILENAME" -c copy -metadata comment="unique-id-${RANDOM}" "$UNIQUE_FILENAME"
+            echo "✅ Metadata modified. Final file is '$UNIQUE_FILENAME'."
+            echo "filepath=$UNIQUE_FILENAME" >> $GITHUB_OUTPUT
           else
             echo "❌ Download failed or resulted in an empty file."
             exit 1
@@ -64,11 +79,8 @@ jobs:
         id: catbox
         run: |
           FILE_PATH="${{ steps.download.outputs.filepath }}"
-          UNIQUE_FILENAME="video-$(date +%s)-${RANDOM}.mp4"
-          echo "Uploading $FILE_PATH as $UNIQUE_FILENAME to Catbox..."
-          
-          OUTPUT_LINK=$(curl -F "reqtype=fileupload" -F "fileToUpload=@$FILE_PATH;filename=$UNIQUE_FILENAME" https://catbox.moe/user/api.php)
-          
+          echo "Uploading $FILE_PATH to Catbox..."
+          OUTPUT_LINK=$(curl -F "reqtype=fileupload" -F "fileToUpload=@$FILE_PATH" https://catbox.moe/user/api.php)
           echo "Catbox API Response: '$OUTPUT_LINK'"
           if [[ -n "$OUTPUT_LINK" && "$OUTPUT_LINK" =~ ^https:// ]]; then
             echo "✅ Upload successful: $OUTPUT_LINK"
