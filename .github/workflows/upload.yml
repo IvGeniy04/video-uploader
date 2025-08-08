@@ -1,10 +1,10 @@
-name: Video Uploader v21.1 (Enhanced Scraper Fallback)
+name: Video Uploader v21.1 (Fast Scraper Fallback)
 
 on:
   workflow_dispatch:
     inputs:
       url:
-        description: 'Video URL (e.g., https://pin.it/5907R10B4)'
+        description: 'Video URL (e.g., https://pin.it/1r7jecJ19)'
         required: true
       message_id:
         description: 'Discord Message ID'
@@ -64,7 +64,7 @@ jobs:
           if [[ "$VIDEO_URL" == *"pinterest.com"* ]]; then
             echo "Pinterest URL detected. Trying Python scraper..."
 
-            # Use a here-document to pass the script to python3
+            # Try pinterestdownloader.com first
             if python3 - "$VIDEO_URL" "$FINAL_FILENAME" <<'EOF'
 import requests, sys, random
 from bs4 import BeautifulSoup
@@ -72,7 +72,6 @@ from bs4 import BeautifulSoup
 url = sys.argv[1]
 filename = sys.argv[2]
 
-# Ротація User-Agent
 user_agents = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36",
@@ -82,11 +81,26 @@ user_agents = [
 try:
     with requests.Session() as s:
         s.headers.update({"User-Agent": random.choice(user_agents)})
+        # Try pinterestdownloader.com
         r = s.post("https://pinterestdownloader.com/download.php", data={"url": url}, timeout=10)
+        if r.status_code == 200:
+            soup = BeautifulSoup(r.text, "html.parser")
+            link = soup.find("a", class_="download-link") or soup.find("a", href=lambda x: x and ".mp4" in x)
+            if link and link.get("href"):
+                video_url = link["href"]
+                print(f"Found direct URL: {video_url}")
+                vr = s.get(video_url, stream=True, timeout=20)
+                vr.raise_for_status()
+                with open(filename, "wb") as f:
+                    for chunk in vr.iter_content(chunk_size=8192):
+                        f.write(chunk)
+                print("Download via pinterestdownloader.com successful.")
+                sys.exit(0)
+        # Fallback to experts-tool.com
+        r = s.post("https://www.experts-tool.com/pinterest-video-downloader", data={"url": url}, timeout=10)
         r.raise_for_status()
         soup = BeautifulSoup(r.text, "html.parser")
-        # Спроба знайти посилання за класом або за наявністю .mp4
-        link = soup.find("a", class_="download-link") or soup.find("a", href=lambda x: x and ".mp4" in x)
+        link = soup.find("a", href=lambda x: x and ".mp4" in x)
         if link and link.get("href"):
             video_url = link["href"]
             print(f"Found direct URL: {video_url}")
@@ -95,11 +109,10 @@ try:
             with open(filename, "wb") as f:
                 for chunk in vr.iter_content(chunk_size=8192):
                     f.write(chunk)
-            print("Download via scraper successful.")
+            print("Download via experts-tool.com successful.")
             sys.exit(0)
-        else:
-            print("Scraper could not find the download link.", file=sys.stderr)
-            sys.exit(1)
+        print("Scraper could not find the download link.", file=sys.stderr)
+        sys.exit(1)
 except Exception as e:
     print(f"Scraper failed: {e}", file=sys.stderr)
     sys.exit(1)
