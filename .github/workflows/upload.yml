@@ -15,6 +15,9 @@ jobs:
   upload:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Cache Dependencies
         id: cache-deps
         uses: actions/cache@v4
@@ -23,9 +26,9 @@ jobs:
             ~/.cache/pip
             /usr/local/bin/ffmpeg
             ~/.local/lib/python3.12/site-packages
-          key: ${{ runner.os }}-deps-v5-${{ hashFiles('Games/downloader/requirements.txt') }}
+          key: ${{ runner.os }}-deps-v6-${{ hashFiles('.github/workflows/requirements.txt') }}
           restore-keys: |
-            ${{ runner.os }}-deps-v5-
+            ${{ runner.os }}-deps-v6-
 
       - name: Install Dependencies
         if: steps.cache-deps.outputs.cache-hit != 'true'
@@ -35,7 +38,7 @@ jobs:
           else
             echo "ffmpeg is already cached."
           fi
-          pip install --upgrade -r Games/downloader/requirements.txt
+          pip install --upgrade -r .github/workflows/requirements.txt
 
       - name: Resolve Short Links
         id: resolve
