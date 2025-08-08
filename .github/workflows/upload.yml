@@ -1,5 +1,5 @@
-# FINAL PROFESSIONAL VERSION v16.0 - pinterest-dl Final Syntax Fix
-name: Video Uploader v16.0 (pinterest-dl Final Syntax Fix)
+# FINAL PROFESSIONAL VERSION v21.0 - Scraper Fallback
+name: Video Uploader v21.0 (Scraper Fallback)
 
 on:
   workflow_dispatch:
@@ -19,12 +19,12 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-pinterest-dl
+          key: ${{ runner.os }}-pip-final-deps
 
       - name: Install Dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y ffmpeg
-          pip install --upgrade git+https://github.com/yt-dlp/yt-dlp.git gallery-dl pinterest-dl
+          pip install --upgrade git+https://github.com/yt-dlp/yt-dlp.git gallery-dl requests beautifulsoup4
 
       - name: Download Video (Optimized Hybrid Method)
         id: download
@@ -33,20 +33,42 @@ jobs:
           FINAL_FILENAME="video.mp4"
           DOWNLOAD_SUCCESS=false
 
-          echo "Processing URL: $VIDEO_URL"
-
           if [[ "$VIDEO_URL" == *"pinterest.com"* || "$VIDEO_URL" == *"pin.it"* ]]; then
-            echo "Pinterest URL detected. Using specialized pinterest-dl for speed..."
-            # Corrected syntax for pinterest-dl (removed -l)
-            pinterest-dl download "$VIDEO_URL" -o .
-            DOWNLOADED_FILE=$(find . -maxdepth 1 -type f -name "*.mp4")
+            echo "Pinterest URL detected. Using embedded Python scraper..."
             
-            if [ -s "$DOWNLOADED_FILE" ]; then
-                echo "✅ pinterest-dl successful."
-                mv "$DOWNLOADED_FILE" "$FINAL_FILENAME"
+            python3 -c '
+import requests, sys
+from bs4 import BeautifulSoup
+
+url = sys.argv[1]
+filename = sys.argv[2]
+try:
+    with requests.Session() as s:
+        s.headers.update({"User-Agent": "Mozilla/5.0"})
+        r = s.post("https://pinterestdownloader.com/download.php", data={"url": url})
+        r.raise_for_status()
+        soup = BeautifulSoup(r.text, "html.parser")
+        link = soup.find("a", class_="download-link")
+        if link and link.get("href"):
+            video_url = link["href"]
+            print(f"Found direct URL: {video_url}")
+            vr = s.get(video_url, stream=True)
+            vr.raise_for_status()
+            with open(filename, "wb") as f:
+                for chunk in vr.iter_content(chunk_size=8192):
+                    f.write(chunk)
+            print("Download via scraper successful.")
+        else:
+            sys.exit(1)
+except Exception as e:
+    print(f"Scraper failed: {e}", file=sys.stderr)
+    sys.exit(1)
+' "$VIDEO_URL" "$FINAL_FILENAME"
+
+            if [ -s "$FINAL_FILENAME" ]; then
                 DOWNLOAD_SUCCESS=true
             else
-                echo "⚠️ pinterest-dl failed. Falling back to gallery-dl..."
+                echo "⚠️ Scraper method failed. Falling back to gallery-dl..."
                 gallery-dl --verbose --directory . "$VIDEO_URL"
                 DOWNLOADED_FILE=$(find . -maxdepth 1 -type f -name "*.mp4")
                 if [ -n "$DOWNLOADED_FILE" ]; then
