@@ -36,6 +36,7 @@ jobs:
           if [[ "$VIDEO_URL" == *"pinterest.com"* || "$VIDEO_URL" == *"pin.it"* ]]; then
             echo "Pinterest URL detected. Using embedded Python scraper..."
             
+            # Correctly formatted embedded Python script
             python3 -c '
 import requests, sys
 from bs4 import BeautifulSoup
@@ -70,41 +71,6 @@ except Exception as e:
             else
                 echo "⚠️ Scraper method failed. Falling back to gallery-dl..."
                 gallery-dl --verbose --directory . "$VIDEO_URL"
-                DOWNLOADED_FILE=$(find . -maxdepth 1 -type f -name "*.mp4")
-                if [ -n "$DOWNLOADED_FILE" ]; then
-                    mv "$DOWNLOADED_FILE" "$FINAL_FILENAME"
-                fi
-            fi
-          else
-            echo "Non-Pinterest URL. Using yt-dlp..."
-            yt-dlp \
-              --format "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" \
-              --merge-output-format mp4 \
-              --output "$FINAL_FILENAME" \
-              "$VIDEO_URL"
-          fi
-          
-          if [ -s "$FINAL_FILENAME" ]; then
-            echo "✅ Download successful. File is '$FINAL_FILENAME' and size is greater than zero."
-            echo "filepath=$FINAL_FILENAME" >> $GITHUB_OUTPUT
-          else
-            echo "❌ Download failed or resulted in an empty file."
-            exit 1
-          fi
-
-      - name: Upload to Catbox
-        id: catbox
-        run: |
-          FILE_PATH="${{ steps.download.outputs.filepath }}"
-          UNIQUE_FILENAME="video-$(date +%s)-${RANDOM}.mp4"
-          echo "Uploading $FILE_PATH as $UNIQUE_FILENAME to Catbox..."
-          
-          OUTPUT_LINK=$(curl -F "reqtype=fileupload" -F "fileToUpload=@$FILE_PATH;filename=$UNIQUE_FILENAME" https://catbox.moe/user/api.php)
-          
-          echo "Catbox API Response: '$OUTPUT_LINK'"
-          if [[ -n "$OUTPUT_LINK" && "$OUTPUT_LINK" =~ ^https:// ]]; then
-            echo "✅ Upload successful: $OUTPUT_LINK"
-            echo "link=$OUTPUT_LINK" >> $GITHUB_OUTPUT
           else
             echo "❌ Upload Failed. Response was empty or not a URL."
             exit 1
