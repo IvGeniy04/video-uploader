@@ -1,11 +1,10 @@
-# FINAL PROFESSIONAL VERSION v21.0 - Scraper Fallback
-name: Video Uploader v21.0 (Scraper Fallback)
+name: Video Uploader v21.1 (Enhanced Scraper Fallback)
 
 on:
   workflow_dispatch:
     inputs:
       url:
-        description: 'Video URL'
+        description: 'Video URL (e.g., https://pin.it/5907R10B4)'
         required: true
       message_id:
         description: 'Discord Message ID'
@@ -14,72 +13,109 @@ on:
 jobs:
   upload:
     runs-on: ubuntu-latest
+
     steps:
+      # Cache pip dependencies
       - name: Cache pip dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-final-deps
+          key: ${{ runner.os }}-pip-final-deps-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-final-deps-
 
+      # Cache apt packages
+      - name: Cache apt packages
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt
+          key: ${{ runner.os }}-apt-ffmpeg-${{ hashFiles('**/apt-cache.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-ffmpeg-
+
+      # Install dependencies
       - name: Install Dependencies
         run: |
-          sudo apt-get update && sudo apt-get install -y ffmpeg
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
           pip install --upgrade git+https://github.com/yt-dlp/yt-dlp.git gallery-dl requests beautifulsoup4
+          echo "Dependencies installed successfully"
 
+      # Download video
       - name: Download Video (Optimized Hybrid Method)
         id: download
         run: |
           VIDEO_URL="${{ github.event.inputs.url }}"
           FINAL_FILENAME="video.mp4"
 
-          if [[ "$VIDEO_URL" == *"pinterest.com"* || "$VIDEO_URL" == *"pin.it"* ]]; then
+          # Resolve pin.it short URLs
+          if [[ "$VIDEO_URL" == *"pin.it"* ]]; then
+            echo "Resolving pin.it short URL..."
+            RESPONSE=$(curl -s -L -o /dev/null -w "%{url_effective}" "$VIDEO_URL")
+            if [[ "$RESPONSE" == *"pinterest.com"* ]]; then
+              VIDEO_URL="$RESPONSE"
+              echo "Resolved to: $VIDEO_URL"
+            else
+              echo "Failed to resolve pin.it URL"
+              exit 1
+            fi
+          fi
+
+          if [[ "$VIDEO_URL" == *"pinterest.com"* ]]; then
             echo "Pinterest URL detected. Trying Python scraper..."
-            
+
             # Use a here-document to pass the script to python3
             if python3 - "$VIDEO_URL" "$FINAL_FILENAME" <<'EOF'
-          import requests, sys
-          from bs4 import BeautifulSoup
+import requests, sys, random
+from bs4 import BeautifulSoup
 
-          url = sys.argv[1]
-          filename = sys.argv[2]
-          try:
-              with requests.Session() as s:
-                  s.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"})
-                  r = s.post("https://pinterestdownloader.com/download.php", data={"url": url})
-                  r.raise_for_status()
-                  soup = BeautifulSoup(r.text, "html.parser")
-                  # Find the download link, which might be in an 'a' tag with class 'download-link'
-                  link = soup.find("a", class_="download-link")
-                  if link and link.get("href"):
-                      video_url = link["href"]
-                      print(f"Found direct URL: {video_url}")
-                      vr = s.get(video_url, stream=True)
-                      vr.raise_for_status()
-                      with open(filename, "wb") as f:
-                          for chunk in vr.iter_content(chunk_size=8192):
-                              f.write(chunk)
-                      print("Download via scraper successful.")
-                      sys.exit(0) # Explicitly exit with success code
-                  else:
-                      print("Scraper could not find the download link.", file=sys.stderr)
-                      sys.exit(1) # Exit with failure code
-          except Exception as e:
-              print(f"Scraper failed: {e}", file=sys.stderr)
-              sys.exit(1) # Exit with failure code
-          EOF
-          then
+url = sys.argv[1]
+filename = sys.argv[2]
+
+# Ротація User-Agent
+user_agents = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36"
+]
+
+try:
+    with requests.Session() as s:
+        s.headers.update({"User-Agent": random.choice(user_agents)})
+        r = s.post("https://pinterestdownloader.com/download.php", data={"url": url}, timeout=10)
+        r.raise_for_status()
+        soup = BeautifulSoup(r.text, "html.parser")
+        # Спроба знайти посилання за класом або за наявністю .mp4
+        link = soup.find("a", class_="download-link") or soup.find("a", href=lambda x: x and ".mp4" in x)
+        if link and link.get("href"):
+            video_url = link["href"]
+            print(f"Found direct URL: {video_url}")
+            vr = s.get(video_url, stream=True, timeout=20)
+            vr.raise_for_status()
+            with open(filename, "wb") as f:
+                for chunk in vr.iter_content(chunk_size=8192):
+                    f.write(chunk)
+            print("Download via scraper successful.")
+            sys.exit(0)
+        else:
+            print("Scraper could not find the download link.", file=sys.stderr)
+            sys.exit(1)
+except Exception as e:
+    print(f"Scraper failed: {e}", file=sys.stderr)
+    sys.exit(1)
+EOF
+            then
               echo "✅ Python scraper succeeded."
             else
               echo "⚠️ Scraper method failed. Falling back to gallery-dl..."
-              gallery-dl --verbose --directory . "$VIDEO_URL"
-              # Find the downloaded file, which should be an mp4
+              gallery-dl --verbose --no-check-certificate --directory . --download-archive archive.txt "$VIDEO_URL"
               DOWNLOADED_FILE=$(find . -maxdepth 1 -type f -name "*.mp4" -print -quit)
               if [ -n "$DOWNLOADED_FILE" ]; then
-                  echo "Found downloaded file: $DOWNLOADED_FILE. Renaming to $FINAL_FILENAME"
-                  mv "$DOWNLOADED_FILE" "$FINAL_FILENAME"
+                echo "Found downloaded file: $DOWNLOADED_FILE. Renaming to $FINAL_FILENAME"
+                mv "$DOWNLOADED_FILE" "$FINAL_FILENAME"
               else
-                  echo "❌ gallery-dl fallback also failed to download a file."
-                  exit 1
+                echo "❌ gallery-dl fallback also failed to download a file."
+                exit 1
               fi
             fi
           else
@@ -90,49 +126,52 @@ jobs:
               --output "$FINAL_FILENAME" \
               "$VIDEO_URL"
           fi
-          
+
           if [ -s "$FINAL_FILENAME" ]; then
-            echo "✅ Download successful. File is '$FINAL_FILENAME' and size is greater than zero."
+            echo "✅ Download successful. File is '$FINAL_FILENAME' and size is $(stat -c%s "$FINAL_FILENAME") bytes."
             echo "filepath=$FINAL_FILENAME" >> $GITHUB_OUTPUT
           else
             echo "❌ Download failed or resulted in an empty file after all attempts."
             exit 1
           fi
 
+      # Upload to Catbox
       - name: Upload to Catbox
         id: catbox
         run: |
           FILE_PATH="${{ steps.download.outputs.filepath }}"
-          UNIQUE_FILENAME="video-$(date +%s)-${RANDOM}.mp4"
+          UNIQUE_FILENAME="video-$(date +%s)-${{ github.run_id }}-${RANDOM}.mp4"
           echo "Uploading $FILE_PATH as $UNIQUE_FILENAME to Catbox..."
-          
-          OUTPUT_LINK=$(curl -F "reqtype=fileupload" -F "fileToUpload=@$FILE_PATH;filename=$UNIQUE_FILENAME" https://catbox.moe/user/api.php)
-          
+
+          OUTPUT_LINK=$(curl -s -F "reqtype=fileupload" -F "fileToUpload=@$FILE_PATH;filename=$UNIQUE_FILENAME" https://catbox.moe/user/api.php)
+
           echo "Catbox API Response: '$OUTPUT_LINK'"
           if [[ -n "$OUTPUT_LINK" && "$OUTPUT_LINK" =~ ^https:// ]]; then
             echo "✅ Upload successful: $OUTPUT_LINK"
             echo "link=$OUTPUT_LINK" >> $GITHUB_OUTPUT
           else
-            echo "❌ Upload Failed. Response was empty or not a URL."
+            echo "❌ Upload failed. Response was empty or not a URL."
             exit 1
           fi
 
+      # Send result to Discord
       - name: Send Result to Discord
         if: success()
         run: |
           MESSAGE_ID="${{ github.event.inputs.message_id }}"
           if [ -n "$MESSAGE_ID" ]; then
             curl -s -X POST -H "Content-Type: application/json" \
-            -d '{"content": "🔗 Result for message '"$MESSAGE_ID"': ${{ steps.catbox.outputs.link }}"}' \
-            "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
+              -d "{\"content\": \"🔗 Result for message '$MESSAGE_ID': ${{ steps.catbox.outputs.link }}\"}" \
+              "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
           fi
-      
+
+      # Notify on failure
       - name: Notify on Failure
         if: failure()
         run: |
           MESSAGE_ID="${{ github.event.inputs.message_id }}"
           if [ -n "$MESSAGE_ID" ]; then
             curl -s -X POST -H "Content-Type: application/json" \
-            -d '{"content": "❌ Failed to process URL for message '"$MESSAGE_ID"': ${{ github.event.inputs.url }}"}' \
-            "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
+              -d "{\"content\": \"❌ Failed to process URL for message '$MESSAGE_ID': ${{ github.event.inputs.url }}\"}" \
+              "${{ secrets.DISCORD_RESULTS_WEBHOOK }}"
           fi
