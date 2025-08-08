@@ -1,4 +1,4 @@
-name: Upload Video to Catbox no sound
+name: Upload Video to Catbox
 
 on:
   workflow_dispatch:
