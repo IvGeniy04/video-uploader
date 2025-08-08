@@ -56,6 +56,7 @@ jobs:
             echo "Pinterest URL detected. Using gallery-dl for robust download."
             gallery-dl \
               --verbose \
+              --directory . \
               --no-check-certificate \
               --download-archive archive.txt \
               --filename "video.mp4" \
