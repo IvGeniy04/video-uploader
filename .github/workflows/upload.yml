@@ -1,5 +1,5 @@
-# FINAL PROFESSIONAL VERSION v13.0 - Rename File (Rollback)
-name: Video Uploader v13.0 (Rename Fix)
+# FINAL PROFESSIONAL VERSION v14.0 - pinterest-dl Speed
+name: Video Uploader v14.0 (pinterest-dl Speed Fix)
 
 on:
   workflow_dispatch:
@@ -19,27 +19,38 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-gallery-dl
+          key: ${{ runner.os }}-pip-pinterest-dl
 
       - name: Install Dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y ffmpeg
-          pip install --upgrade git+https://github.com/yt-dlp/yt-dlp.git gallery-dl
+          pip install --upgrade git+https://github.com/yt-dlp/yt-dlp.git gallery-dl pinterest-dl
 
-      - name: Download Video (Hybrid Method)
+      - name: Download Video (Optimized Hybrid Method)
         id: download
         run: |
           VIDEO_URL="${{ github.event.inputs.url }}"
           FINAL_FILENAME="video.mp4"
+          DOWNLOAD_SUCCESS=false
 
           echo "Processing URL: $VIDEO_URL"
 
           if [[ "$VIDEO_URL" == *"pinterest.com"* || "$VIDEO_URL" == *"pin.it"* ]]; then
-            echo "Pinterest URL detected. Using gallery-dl..."
-            gallery-dl --verbose --directory . "$VIDEO_URL"
+            echo "Pinterest URL detected. Using specialized pinterest-dl for speed..."
+            pinterest-dl -d "$VIDEO_URL" -o .
             DOWNLOADED_FILE=$(find . -maxdepth 1 -type f -name "*.mp4")
-            if [ -n "$DOWNLOADED_FILE" ]; then
-              mv "$DOWNLOADED_FILE" "$FINAL_FILENAME"
+            
+            if [ -s "$DOWNLOADED_FILE" ]; then
+                echo "✅ pinterest-dl successful."
+                mv "$DOWNLOADED_FILE" "$FINAL_FILENAME"
+                DOWNLOAD_SUCCESS=true
+            else
+                echo "⚠️ pinterest-dl failed. Falling back to gallery-dl..."
+                gallery-dl --verbose --directory . "$VIDEO_URL"
+                DOWNLOADED_FILE=$(find . -maxdepth 1 -type f -name "*.mp4")
+                if [ -n "$DOWNLOADED_FILE" ]; then
+                    mv "$DOWNLOADED_FILE" "$FINAL_FILENAME"
+                fi
             fi
           else
             echo "Non-Pinterest URL. Using yt-dlp..."
