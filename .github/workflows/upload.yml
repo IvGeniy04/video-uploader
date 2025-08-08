@@ -1,5 +1,5 @@
-# FINAL PROFESSIONAL VERSION v12.0 - Unique Filename
-name: Video Uploader v12.0 (Unique Filename Fix)
+# FINAL PROFESSIONAL VERSION v13.0 - Rename File
+name: Video Uploader v13.0 (Rename Fix)
 
 on:
   workflow_dispatch:
@@ -30,27 +30,31 @@ jobs:
         id: download
         run: |
           VIDEO_URL="${{ github.event.inputs.url }}"
-          DOWNLOADED_FILE=""
+          FINAL_FILENAME="video.mp4"
 
           echo "Processing URL: $VIDEO_URL"
 
           if [[ "$VIDEO_URL" == *"pinterest.com"* || "$VIDEO_URL" == *"pin.it"* ]]; then
             echo "Pinterest URL detected. Using gallery-dl..."
             gallery-dl --verbose --directory . "$VIDEO_URL"
+            # Find the downloaded file, whatever its name is
             DOWNLOADED_FILE=$(find . -maxdepth 1 -type f -name "*.mp4")
+            # Rename it to a standard name
+            if [ -n "$DOWNLOADED_FILE" ]; then
+              mv "$DOWNLOADED_FILE" "$FINAL_FILENAME"
+            fi
           else
             echo "Non-Pinterest URL. Using yt-dlp..."
-            DOWNLOADED_FILE="video.mp4"
             yt-dlp \
               --format "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" \
               --merge-output-format mp4 \
-              --output "$DOWNLOADED_FILE" \
+              --output "$FINAL_FILENAME" \
               "$VIDEO_URL"
           fi
           
-          if [ -s "$DOWNLOADED_FILE" ]; then
-            echo "✅ Download successful. File is '$DOWNLOADED_FILE' and size is greater than zero."
-            echo "filepath=$DOWNLOADED_FILE" >> $GITHUB_OUTPUT
+          if [ -s "$FINAL_FILENAME" ]; then
+            echo "✅ Download successful. File is '$FINAL_FILENAME' and size is greater than zero."
+            echo "filepath=$FINAL_FILENAME" >> $GITHUB_OUTPUT
           else
             echo "❌ Download failed or resulted in an empty file."
             exit 1
@@ -60,7 +64,6 @@ jobs:
         id: catbox
         run: |
           FILE_PATH="${{ steps.download.outputs.filepath }}"
-          # Generate a unique filename to bypass Catbox duplicate detection
           UNIQUE_FILENAME="video-$(date +%s)-${RANDOM}.mp4"
           echo "Uploading $FILE_PATH as $UNIQUE_FILENAME to Catbox..."
           
