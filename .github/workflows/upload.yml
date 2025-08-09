@@ -66,7 +66,7 @@ jobs:
 
           if [[ "$VIDEO_URL" == *"pinterest.com"* ]]; then
             echo "Pinterest URL detected. Using gallery-dl for robust download."
-            gallery-dl \
+            python3 -m gallery_dl \
               --verbose \
               --directory . \
               --no-check-certificate \
@@ -75,7 +75,7 @@ jobs:
               "$VIDEO_URL"
           else
             echo "Non-Pinterest URL. Using yt-dlp..."
-            yt-dlp \
+            python3 -m yt_dlp \
               --format "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" \
               --merge-output-format mp4 \
               --output "$FINAL_FILENAME" \
