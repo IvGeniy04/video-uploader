@@ -30,7 +30,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-deps-v6-
 
-      - name: Install Dependencies
+      - name: Install Dependencies and Configure FFmpeg
         if: steps.cache-deps.outputs.cache-hit != 'true'
         run: |
           if ! command -v ffmpeg &> /dev/null; then
@@ -39,10 +39,11 @@ jobs:
             echo "ffmpeg is already cached."
           fi
           pip install --upgrade -r .github/workflows/requirements.txt
-          echo "Python user base: $(python3 -m site --user-base)"
-          echo "Python user site: $(python3 -m site --user-site)"
-      - name: Add user bin to PATH
-        run: echo "PATH=$PATH:$HOME/.local/bin" >> $GITHUB_ENV
+          
+          # Find ffmpeg path and set it as an environment variable for subsequent steps
+          FFMPEG_PATH=$(command -v ffmpeg)
+          echo "FFMPEG_PATH=$FFMPEG_PATH" >> $GITHUB_ENV
+          echo "Found ffmpeg at: $FFMPEG_PATH"
 
       - name: Resolve Short Links
         id: resolve
@@ -76,6 +77,7 @@ jobs:
           else
             echo "Non-Pinterest URL. Using yt-dlp..."
             python3 -m yt_dlp \
+              --ffmpeg-location "${{ env.FFMPEG_PATH }}" \
               --format "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" \
               --merge-output-format mp4 \
               --output "$FINAL_FILENAME" \
