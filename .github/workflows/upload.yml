@@ -39,6 +39,7 @@ jobs:
             echo "ffmpeg is already cached."
           fi
           pip install --upgrade -r .github/workflows/requirements.txt
+          echo "PATH=$PATH:$HOME/.local/bin" >> $GITHUB_ENV
 
       - name: Resolve Short Links
         id: resolve
