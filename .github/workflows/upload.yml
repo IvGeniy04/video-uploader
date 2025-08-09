@@ -24,26 +24,19 @@ jobs:
         with:
           path: |
             ~/.cache/pip
-            /usr/local/bin/ffmpeg
             ~/.local/lib/python3.12/site-packages
-          key: ${{ runner.os }}-deps-v6-${{ hashFiles('.github/workflows/requirements.txt') }}
+          key: ${{ runner.os }}-pip-deps-v7-${{ hashFiles('.github/workflows/requirements.txt') }}
           restore-keys: |
-            ${{ runner.os }}-deps-v6-
+            ${{ runner.os }}-pip-deps-v7-
 
-      - name: Install Dependencies and Configure FFmpeg
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Install Python Dependencies
         if: steps.cache-deps.outputs.cache-hit != 'true'
         run: |
-          if ! command -v ffmpeg &> /dev/null; then
-            sudo apt-get update && sudo apt-get install -y ffmpeg
-          else
-            echo "ffmpeg is already cached."
-          fi
           pip install --upgrade -r .github/workflows/requirements.txt
-          
-          # Find ffmpeg path and set it as an environment variable for subsequent steps
-          FFMPEG_PATH=$(command -v ffmpeg)
-          echo "FFMPEG_PATH=$FFMPEG_PATH" >> $GITHUB_ENV
-          echo "Found ffmpeg at: $FFMPEG_PATH"
 
       - name: Resolve Short Links
         id: resolve
