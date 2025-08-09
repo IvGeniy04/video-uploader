@@ -18,23 +18,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Cache Dependencies
-        id: cache-deps
+      - name: Cache Python Dependencies
+        id: cache-pip-deps
         uses: actions/cache@v4
         with:
           path: |
             ~/.cache/pip
             ~/.local/lib/python3.12/site-packages
-          key: ${{ runner.os }}-pip-deps-v7-${{ hashFiles('.github/workflows/requirements.txt') }}
+          key: ${{ runner.os }}-pip-deps-v8-${{ hashFiles('.github/workflows/requirements.txt') }}
           restore-keys: |
-            ${{ runner.os }}-pip-deps-v7-
+            ${{ runner.os }}-pip-deps-v8-
 
-      - name: Install FFmpeg
-        run: |
-          sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Setup FFmpeg
+        uses: FedericoCarboni/setup-ffmpeg@v3
+        id: setup-ffmpeg
 
       - name: Install Python Dependencies
-        if: steps.cache-deps.outputs.cache-hit != 'true'
+        if: steps.cache-pip-deps.outputs.cache-hit != 'true'
         run: |
           pip install --upgrade -r .github/workflows/requirements.txt
 
@@ -70,7 +70,6 @@ jobs:
           else
             echo "Non-Pinterest URL. Using yt-dlp..."
             python3 -m yt_dlp \
-              --ffmpeg-location "${{ env.FFMPEG_PATH }}" \
               --format "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" \
               --merge-output-format mp4 \
               --output "$FINAL_FILENAME" \
